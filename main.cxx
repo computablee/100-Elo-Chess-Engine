@@ -114,6 +114,8 @@ float heuristic(Board& board)
     if (result.second == GameResult::DRAW)
         return 0.0;
     else if (result.second == GameResult::WIN)
+        return std::numeric_limits<float>::infinity();
+    else if (result.second == GameResult::LOSE)
         return -std::numeric_limits<float>::infinity();
 
     auto whitescore = calculateMaterial(board, Color::WHITE);
