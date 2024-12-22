@@ -12,6 +12,7 @@
 #define BEST_EVAL 1000000
 #define WORST_EVAL (-1000000)
 #define SECONDS_TO_THINK 30
+#define TT_SIZE 10000000
 
 constexpr inline int flip(int x) { return (x ^ 56) & 0xFF; }
 
@@ -87,7 +88,7 @@ static const int kingTable[] = {
 
 static int tables[2][6][64];
 
-int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDepth);
+int negamax(Board& board, uint8_t depth, int alpha, int beta, int color, int maxDepth);
 Move think(Board& board);
 int heuristic(const Board& board, const int& distanceToMaxDepth, const Movelist& moves);
 
@@ -95,19 +96,25 @@ enum ttFlag : uint8_t { EXACT, UPPERBOUND, LOWERBOUND };
 
 struct ttEntry
 {
+    uint64_t hash;
     int value;
     ttFlag flag;
-    int depth;
+    uint8_t depth;
 };
 
-std::map<uint64_t, ttEntry> transpositionTable;
+ttEntry* transpositionTable;
 
 static int count;
+
+inline uint32_t reduce(const uint32_t x, const uint32_t N) {
+  return ((uint64_t)x * (uint64_t)N) >> 32;
+}
 
 int main () {
     Board board = Board(chess::constants::STARTPOS);
     Movelist moves;
     std::string input;
+    transpositionTable = new ttEntry[TT_SIZE];
 
     for (auto i = 0; i < 64; i++)
     {
@@ -139,23 +146,9 @@ int main () {
 
         std::cout << "bestmove " << uci::moveToUci(bestmove) << std::endl;
         board.makeMove(bestmove);
-        transpositionTable.clear();
     }
 
     return 0;
-}
-
-inline void thinkHelper(Board& board, Move& bestMove, const Move& move, int& bestEvaluation, const int& depth)
-{
-    board.makeMove(move);
-    auto evaluateMove = -negamax(board, depth, WORST_EVAL, BEST_EVAL, 1, depth);
-    board.unmakeMove(move);
-
-    if (evaluateMove > bestEvaluation)
-    {
-        bestMove = move;
-        bestEvaluation = evaluateMove;
-    }
 }
 
 std::list<Move> orderMoves(const Movelist& moves, const Board& board)
@@ -184,35 +177,57 @@ std::list<Move> orderMoves(const Movelist& moves, const Board& board)
     return orderedMoves;
 }
 
+class TimeOut : std::exception { };
+
+static std::chrono::steady_clock::time_point begin;
+
 Move think(Board& board)
 {
+    begin = std::chrono::steady_clock::now();
+
+    Board boardCopy = board;
+
     Movelist moves;
     movegen::legalmoves(moves, board);
 
+    if (moves.size() == 0)
+    {
+        std::cout << "game over" << std::endl;
+        return Move(0);
+    }
     if (moves.size() == 1)
         return moves[0];
 
-    Move bestMove;
+    Move bestMove = moves[0];
     int bestEvaluation = WORST_EVAL;
 
-    const auto begin = std::chrono::steady_clock::now();
-
-    for (auto depth = 4; ; depth++)
+    try
     {
-        std::cout << "thinking for " << SECONDS_TO_THINK << " seconds... depth = " << depth << std::endl;
-
-        const auto orderedMoves = orderMoves(moves, board);
-
-        for (const auto& move : orderedMoves)
+        for (auto depth = 4; ; depth++)
         {
-            thinkHelper(board, bestMove, move, bestEvaluation, depth);
+            std::cout << "thinking for " << SECONDS_TO_THINK << " seconds... depth = " << depth << std::endl;
 
-            if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - begin).count() >= SECONDS_TO_THINK)
-                goto finished;
+            const auto orderedMoves = orderMoves(moves, board);
+
+            for (const auto& move : orderedMoves)
+            {
+                board.makeMove(move);
+                auto evaluateMove = -negamax(board, depth, WORST_EVAL, BEST_EVAL, 1, depth);
+                board.unmakeMove(move);
+
+                if (evaluateMove > bestEvaluation)
+                {
+                    bestMove = move;
+                    bestEvaluation = evaluateMove;
+                }
+            }
         }
     }
+    catch (const TimeOut& e)
+    {
+        board = boardCopy;
+    }
 
-finished:
     return bestMove;
 }
 
@@ -239,14 +254,14 @@ bool isGameOver(const Board& board, const Movelist& moves, bool& draw, bool& whi
     return false;
 }
 
-int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDepth)
+int negamax(Board& board, uint8_t depth, int alpha, int beta, int color, int maxDepth)
 {
     auto alphaOrig = alpha;
 
-    if (transpositionTable.count(board.hash()))
-    {
-        auto ttentry = transpositionTable[board.hash()];
+    auto ttentry = transpositionTable[reduce(board.hash(), TT_SIZE)];
 
+    if (ttentry.hash == board.hash())
+    {
         if (ttentry.depth >= depth)
         {
             if (ttentry.flag == EXACT)
@@ -284,7 +299,6 @@ int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDept
             break;
     }
 
-    ttEntry ttentry;
     ttentry.value = value;
 
     if (value <= alphaOrig)
@@ -295,7 +309,8 @@ int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDept
         ttentry.flag = EXACT;
 
     ttentry.depth = depth;
-    transpositionTable[board.hash()] = ttentry;
+    ttentry.hash = board.hash();
+    transpositionTable[reduce(board.hash(), TT_SIZE)] = ttentry;
 
     return value;
 }
@@ -319,7 +334,10 @@ int calculateMaterial(const Board& board, Color color) {
 
 int heuristic(const Board& board, const int& distanceToMaxDepth, const Movelist& moves)
 {
-    count++;
+    if ((++count & 1023) == 0 &&
+            std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - begin).count() > SECONDS_TO_THINK)
+        throw TimeOut();
+
     auto draw = false, whiteWon = false, blackWon = false;
 
     if (isGameOver(board, moves, draw, whiteWon, blackWon))
