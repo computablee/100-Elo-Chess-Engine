@@ -246,7 +246,7 @@ int heuristic(const Board& board, const int& distanceToMaxDepth)
 {
     auto result = board.isGameOver();
 
-    if (result.second == GameResult::DRAW)
+    if (result.second == GameResult::DRAW || board.isRepetition())
         return 0;
     else if ((result.second == GameResult::WIN && board.sideToMove() == Color::WHITE) ||
              (result.second == GameResult::LOSE && board.sideToMove() == Color::BLACK))
