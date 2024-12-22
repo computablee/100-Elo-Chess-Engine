@@ -4,8 +4,9 @@
 #include <limits>
 #include <utility>
 #include <bit>
+#include <climits>
 
-#define DEPTH 6
+#define DEPTH 7
 #define BEST_EVAL 1000000
 #define WORST_EVAL (-1000000)
 
@@ -14,6 +15,7 @@ using namespace chess;
 int negamax(Board& board, int depth, int alpha, int beta);
 Move think(Board& board);
 int heuristic(Board& board);
+int matesearch(Board& board, int depth);
 
 int main () {
     Board board = Board(chess::constants::STARTPOS);
@@ -45,14 +47,60 @@ Move think(Board& board)
 
     for (const auto& move : moves)
     {
-        board.makeMove(move);
-        auto evaluateMove = -negamax(board, DEPTH, WORST_EVAL, BEST_EVAL);
-        board.unmakeMove(move);
-
-        if (evaluateMove > bestEvaluation)
+        if (board.isCapture(move))
         {
-            bestMove = move;
-            bestEvaluation = evaluateMove;
+            board.makeMove(move);
+            auto evaluateMove = -negamax(board, DEPTH, WORST_EVAL, BEST_EVAL);
+            board.unmakeMove(move);
+
+            if (evaluateMove > bestEvaluation)
+            {
+                bestMove = move;
+                bestEvaluation = evaluateMove;
+            }
+
+            if (bestEvaluation == BEST_EVAL)
+                break;
+        }
+    }
+
+    if (bestEvaluation != BEST_EVAL) for (const auto& move : moves)
+    {
+        if (!board.isCapture(move))
+        {
+            board.makeMove(move);
+            auto evaluateMove = -negamax(board, DEPTH, WORST_EVAL, BEST_EVAL);
+            board.unmakeMove(move);
+
+            if (evaluateMove > bestEvaluation)
+            {
+                bestMove = move;
+                bestEvaluation = evaluateMove;
+            }
+        }
+    }
+
+    if (bestEvaluation == BEST_EVAL)
+    {
+        int mating = WORST_EVAL;
+
+        for (int i = 1; i <= DEPTH; i++)
+        {
+            for (const auto& move : moves)
+            {
+                board.makeMove(move);
+                int tried = -negamax(board, i, WORST_EVAL, BEST_EVAL);
+                if (tried > mating)
+                {
+                    bestMove = move;
+                    mating = tried;
+                }
+                board.unmakeMove(move);
+                if (mating == BEST_EVAL)
+                    break;
+            }
+            if (mating == BEST_EVAL)
+                break;
         }
     }
 
@@ -76,13 +124,30 @@ int negamax(Board& board, int depth, int alpha, int beta)
 
     for (const auto& move : moves)
     {
-        board.makeMove(move);
-        value = std::max(value, -negamax(board, depth - 1, -beta, -alpha));
-        board.unmakeMove(move);
+        if (board.isCapture(move))
+        {
+            board.makeMove(move);
+            value = std::max(value, -negamax(board, depth - 1, -beta, -alpha));
+            board.unmakeMove(move);
 
-        alpha = std::max(alpha, value);
-        if (alpha >= beta)
-            break;
+            alpha = std::max(alpha, value);
+            if (alpha >= beta)
+                break;
+        }
+    }
+
+    for (const auto& move : moves)
+    {
+        if (!board.isCapture(move))
+        {
+            board.makeMove(move);
+            value = std::max(value, -negamax(board, depth - 1, -beta, -alpha));
+            board.unmakeMove(move);
+
+            alpha = std::max(alpha, value);
+            if (alpha >= beta)
+                break;
+        }
     }
 
     return value;
