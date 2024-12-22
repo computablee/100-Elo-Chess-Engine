@@ -5,10 +5,12 @@
 #include <utility>
 #include <bit>
 #include <climits>
+#include <chrono>
+#include <list>
 
-#define DEPTH 6
 #define BEST_EVAL 1000000
 #define WORST_EVAL (-1000000)
+#define SECONDS_TO_THINK 30
 
 constexpr inline int flip(int x) { return (x ^ 56) & 0xFF; }
 
@@ -84,9 +86,9 @@ static const int kingTable[] = {
 
 static int tables[2][6][64];
 
-int negamax(Board& board, int depth, int alpha, int beta);
+int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDepth);
 Move think(Board& board);
-int heuristic(Board& board);
+int heuristic(const Board& board, const int& distanceToMaxDepth);
 
 int main () {
     Board board = Board(chess::constants::STARTPOS);
@@ -126,117 +128,98 @@ int main () {
     return 0;
 }
 
+inline void thinkHelper(Board& board, Move& bestMove, const Move& move, int& bestEvaluation, const int& depth)
+{
+    board.makeMove(move);
+    auto evaluateMove = -negamax(board, depth, WORST_EVAL, BEST_EVAL, 1, depth);
+    board.unmakeMove(move);
+
+    if (evaluateMove > bestEvaluation)
+    {
+        bestMove = move;
+        bestEvaluation = evaluateMove;
+    }
+}
+
+std::list<Move> orderMoves(const Movelist& moves, const Board& board)
+{
+    std::list<Move> orderedMoves;
+    for (const auto& move : moves)
+        orderedMoves.push_back(move);
+
+    orderedMoves.sort([&board](const Move& a, const Move& b) {
+        if (board.isCapture(a) && !board.isCapture(b))
+            return true;
+        else if (!board.isCapture(a) && board.isCapture(b))
+            return false;
+        else if (board.isCapture(a) && board.isCapture(b))
+        {
+            if (board.at(a.to()) > board.at(b.to()))
+                return true;
+            else if (board.at(a.to()) < board.at(b.to()))
+                return false;
+            else
+                return board.at(a.from()) < board.at(b.from());
+        }
+        else return true;
+    });
+
+    return orderedMoves;
+}
+
 Move think(Board& board)
 {
     Movelist moves;
     movegen::legalmoves(moves, board);
 
+    if (moves.size() == 1)
+        return moves[0];
+
     Move bestMove;
     int bestEvaluation = WORST_EVAL;
 
-    for (const auto& move : moves)
+    const auto begin = std::chrono::steady_clock::now();
+
+    for (auto depth = 4; ; depth++)
     {
-        if (board.isCapture(move))
+        std::cout << "thinking for " << SECONDS_TO_THINK << " seconds... depth = " << depth << std::endl;
+
+        const auto orderedMoves = orderMoves(moves, board);
+
+        for (const auto& move : orderedMoves)
         {
-            board.makeMove(move);
-            auto evaluateMove = -negamax(board, DEPTH, WORST_EVAL, BEST_EVAL);
-            board.unmakeMove(move);
+            thinkHelper(board, bestMove, move, bestEvaluation, depth);
 
-            if (evaluateMove > bestEvaluation)
-            {
-                bestMove = move;
-                bestEvaluation = evaluateMove;
-            }
-
-            if (bestEvaluation == BEST_EVAL)
-                break;
+            if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - begin).count() >= SECONDS_TO_THINK)
+                goto finished;
         }
     }
 
-    if (bestEvaluation != BEST_EVAL) for (const auto& move : moves)
-    {
-        if (!board.isCapture(move))
-        {
-            board.makeMove(move);
-            auto evaluateMove = -negamax(board, DEPTH, WORST_EVAL, BEST_EVAL);
-            board.unmakeMove(move);
-
-            if (evaluateMove > bestEvaluation)
-            {
-                bestMove = move;
-                bestEvaluation = evaluateMove;
-            }
-        }
-    }
-
-    if (bestEvaluation == BEST_EVAL)
-    {
-        int mating = WORST_EVAL;
-
-        for (int i = 1; i <= DEPTH; i++)
-        {
-            for (const auto& move : moves)
-            {
-                board.makeMove(move);
-                int tried = -negamax(board, i, WORST_EVAL, BEST_EVAL);
-                if (tried > mating)
-                {
-                    bestMove = move;
-                    mating = tried;
-                }
-                board.unmakeMove(move);
-                if (mating == BEST_EVAL)
-                    break;
-            }
-            if (mating == BEST_EVAL)
-                break;
-        }
-    }
-
+finished:
     return bestMove;
 }
 
-int negamax(Board& board, int depth, int alpha, int beta)
+int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDepth)
 {
-    if (depth == 0)
-        return heuristic(board);
-
-    auto game_result = board.isGameOver();
-
-    if (game_result.second != GameResult::NONE)
-        return heuristic(board);
+    if (depth == 0 || board.isGameOver().second != GameResult::NONE)
+        return heuristic(board, maxDepth - depth) * color;
 
     int value = WORST_EVAL;
 
     Movelist moves;
     movegen::legalmoves(moves, board);
 
-    for (const auto& move : moves)
+    const auto orderedMoves = orderMoves(moves, board);
+
+    for (const auto& move : orderedMoves)
     {
-        if (board.isCapture(move))
-        {
-            board.makeMove(move);
-            value = std::max(value, -negamax(board, depth - 1, -beta, -alpha));
-            board.unmakeMove(move);
+        board.makeMove(move);
+        value = std::max(value, -negamax(board, depth - 1, -beta, -alpha, -color, maxDepth));
+        board.unmakeMove(move);
 
-            alpha = std::max(alpha, value);
-            if (alpha >= beta)
-                break;
-        }
-    }
-
-    for (const auto& move : moves)
-    {
-        if (!board.isCapture(move))
-        {
-            board.makeMove(move);
-            value = std::max(value, -negamax(board, depth - 1, -beta, -alpha));
-            board.unmakeMove(move);
-
-            alpha = std::max(alpha, value);
-            if (alpha >= beta)
-                break;
-        }
+        alpha = std::max(alpha, value);
+        if (alpha >= beta)
+            break;
     }
 
     return value;
@@ -246,11 +229,6 @@ static const int pieceValues[] = { 100, 300, 300, 500, 900, 0 };
 
 int calculateMaterial(const Board& board, Color color) {
     int score = 0;
-    /*score += std::popcount(board.pieces(PieceType::PAWN, color).getBits()) * 100;
-    score += std::popcount(board.pieces(PieceType::BISHOP, color).getBits()) * 300;
-    score += std::popcount(board.pieces(PieceType::KNIGHT, color).getBits()) * 300;
-    score += std::popcount(board.pieces(PieceType::ROOK, color).getBits()) * 500;
-    score += std::popcount(board.pieces(PieceType::QUEEN, color).getBits()) * 900;*/
 
     Square max_square(64);
     for (Square i = 0; i < max_square; i++) {
@@ -264,20 +242,20 @@ int calculateMaterial(const Board& board, Color color) {
     return score;
 }
 
-int heuristic(Board& board)
+int heuristic(const Board& board, const int& distanceToMaxDepth)
 {
     auto result = board.isGameOver();
 
     if (result.second == GameResult::DRAW)
         return 0;
-    else if (result.second == GameResult::WIN)
-        return BEST_EVAL;
-    else if (result.second == GameResult::LOSE)
-        return WORST_EVAL;
+    else if ((result.second == GameResult::WIN && board.sideToMove() == Color::WHITE) ||
+             (result.second == GameResult::LOSE && board.sideToMove() == Color::BLACK))
+        return BEST_EVAL - distanceToMaxDepth;
+    else if ((result.second == GameResult::LOSE && board.sideToMove() == Color::WHITE) ||
+             (result.second == GameResult::WIN && board.sideToMove() == Color::BLACK))
+        return WORST_EVAL + distanceToMaxDepth;
 
     auto whitescore = calculateMaterial(board, Color::WHITE);
     auto blackscore = calculateMaterial(board, Color::BLACK);
-    auto diff = whitescore - blackscore;
-
-    return diff * (board.sideToMove() == Color::WHITE ? 1 : -1);
+    return whitescore - blackscore;
 }
