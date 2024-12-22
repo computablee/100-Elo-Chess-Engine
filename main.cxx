@@ -3,16 +3,17 @@
 #include <iostream>
 #include <limits>
 #include <utility>
+#include <bit>
 
-#define DEPTH 4
+#define DEPTH 6
+#define BEST_EVAL 1000000
+#define WORST_EVAL (-1000000)
 
 using namespace chess;
 
-float negamax(Board& board, int depth, float alpha, float beta);
-
+int negamax(Board& board, int depth, int alpha, int beta);
 Move think(Board& board);
-
-float heuristic(Board& board);
+int heuristic(Board& board);
 
 int main () {
     Board board = Board(chess::constants::STARTPOS);
@@ -31,10 +32,6 @@ int main () {
         board.makeMove(bestmove);
     }
 
-    //for (const auto &move : moves) {
-    //    std::cout << uci::moveToUci(move) << std::endl;
-    //}
-
     return 0;
 }
 
@@ -44,12 +41,12 @@ Move think(Board& board)
     movegen::legalmoves(moves, board);
 
     Move bestMove;
-    float bestEvaluation = -std::numeric_limits<float>::infinity();
+    int bestEvaluation = WORST_EVAL;
 
     for (const auto& move : moves)
     {
         board.makeMove(move);
-        auto evaluateMove = -negamax(board, DEPTH, -std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity());
+        auto evaluateMove = -negamax(board, DEPTH, WORST_EVAL, BEST_EVAL);
         board.unmakeMove(move);
 
         if (evaluateMove > bestEvaluation)
@@ -62,7 +59,7 @@ Move think(Board& board)
     return bestMove;
 }
 
-float negamax(Board& board, int depth, float alpha, float beta)
+int negamax(Board& board, int depth, int alpha, int beta)
 {
     if (depth == 0)
         return heuristic(board);
@@ -72,7 +69,7 @@ float negamax(Board& board, int depth, float alpha, float beta)
     if (game_result.second != GameResult::NONE)
         return heuristic(board);
 
-    float value = -std::numeric_limits<float>::infinity();
+    int value = WORST_EVAL;
 
     Movelist moves;
     movegen::legalmoves(moves, board);
@@ -93,30 +90,25 @@ float negamax(Board& board, int depth, float alpha, float beta)
 
 int calculateMaterial(const Board& board, Color color) {
     int score = 0;
-    Square max_square(64);
-    for (Square i = 0; i < max_square; i++) {
-        auto piece = board.at(i);
-        if (piece && piece.color() == color) {
-            score += piece.type() == PieceType::PAWN ? 1.0 :
-                     piece.type() == PieceType::KNIGHT ? 3.0 :
-                     piece.type() == PieceType::BISHOP ? 3.0 :
-                     piece.type() == PieceType::ROOK ? 5.0 :
-                     piece.type() == PieceType::QUEEN ? 9.0 : 0.0;
-        }
-    }
+    score += std::popcount(board.pieces(PieceType::PAWN, color).getBits()) * 100;
+    score += std::popcount(board.pieces(PieceType::BISHOP, color).getBits()) * 300;
+    score += std::popcount(board.pieces(PieceType::KNIGHT, color).getBits()) * 300;
+    score += std::popcount(board.pieces(PieceType::ROOK, color).getBits()) * 500;
+    score += std::popcount(board.pieces(PieceType::QUEEN, color).getBits()) * 900;
+
     return score;
 }
 
-float heuristic(Board& board)
+int heuristic(Board& board)
 {
     auto result = board.isGameOver();
 
     if (result.second == GameResult::DRAW)
-        return 0.0;
+        return 0;
     else if (result.second == GameResult::WIN)
-        return std::numeric_limits<float>::infinity();
+        return BEST_EVAL;
     else if (result.second == GameResult::LOSE)
-        return -std::numeric_limits<float>::infinity();
+        return WORST_EVAL;
 
     auto whitescore = calculateMaterial(board, Color::WHITE);
     auto blackscore = calculateMaterial(board, Color::BLACK);
