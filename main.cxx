@@ -88,7 +88,7 @@ static int tables[2][6][64];
 
 int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDepth);
 Move think(Board& board);
-int heuristic(const Board& board, const int& distanceToMaxDepth);
+int heuristic(const Board& board, const int& distanceToMaxDepth, const Movelist& moves);
 
 int main () {
     Board board = Board(chess::constants::STARTPOS);
@@ -199,15 +199,40 @@ finished:
     return bestMove;
 }
 
+bool isGameOver(const Board& board, const Movelist& moves, bool& draw, bool& whiteWon, bool& blackWon)
+{
+    if (board.isInsufficientMaterial() || board.isRepetition())
+    {
+        draw = true;
+        return true;
+    }
+
+    if (moves.empty())
+    {
+        if (board.inCheck() && board.sideToMove() == Color::WHITE)
+            blackWon = true;
+        else if (board.inCheck() && board.sideToMove() == Color::BLACK)
+            whiteWon = true;
+        else
+            draw = true;
+
+        return true;
+    }
+
+    return false;
+}
+
 int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDepth)
 {
-    if (depth == 0 || board.isGameOver().second != GameResult::NONE)
-        return heuristic(board, maxDepth - depth) * color;
-
-    int value = WORST_EVAL;
-
     Movelist moves;
     movegen::legalmoves(moves, board);
+
+    bool _, __, ___;
+
+    if (depth == 0 || isGameOver(board, moves, _, __, ___))
+        return heuristic(board, maxDepth - depth, moves) * color;
+
+    int value = WORST_EVAL;
 
     const auto orderedMoves = orderMoves(moves, board);
 
@@ -242,18 +267,20 @@ int calculateMaterial(const Board& board, Color color) {
     return score;
 }
 
-int heuristic(const Board& board, const int& distanceToMaxDepth)
+int heuristic(const Board& board, const int& distanceToMaxDepth, const Movelist& moves)
 {
-    auto result = board.isGameOver();
+    auto draw = false, whiteWon = false, blackWon = false;
 
-    if (result.second == GameResult::DRAW || board.isRepetition())
+    if (isGameOver(board, moves, draw, whiteWon, blackWon))
+    {
+        if (draw)
+            return 0;
+        else if (whiteWon)
+           return BEST_EVAL - distanceToMaxDepth;
+        else if (blackWon)
+            return WORST_EVAL + distanceToMaxDepth;
         return 0;
-    else if ((result.second == GameResult::WIN && board.sideToMove() == Color::WHITE) ||
-             (result.second == GameResult::LOSE && board.sideToMove() == Color::BLACK))
-        return BEST_EVAL - distanceToMaxDepth;
-    else if ((result.second == GameResult::LOSE && board.sideToMove() == Color::WHITE) ||
-             (result.second == GameResult::WIN && board.sideToMove() == Color::BLACK))
-        return WORST_EVAL + distanceToMaxDepth;
+    }
 
     auto whitescore = calculateMaterial(board, Color::WHITE);
     auto blackscore = calculateMaterial(board, Color::BLACK);
