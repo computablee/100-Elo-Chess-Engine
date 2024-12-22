@@ -15,7 +15,6 @@ using namespace chess;
 int negamax(Board& board, int depth, int alpha, int beta);
 Move think(Board& board);
 int heuristic(Board& board);
-int matesearch(Board& board, int depth);
 
 int main () {
     Board board = Board(chess::constants::STARTPOS);
