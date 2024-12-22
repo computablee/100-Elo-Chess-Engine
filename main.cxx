@@ -8,11 +8,12 @@
 #include <chrono>
 #include <list>
 #include <map>
+#include <thread>
 
 #define BEST_EVAL 1000000
 #define WORST_EVAL (-1000000)
-#define SECONDS_TO_THINK 30
 #define TT_SIZE 10000000
+//#define DEBUG
 
 constexpr inline int flip(int x) { return (x ^ 56) & 0xFF; }
 
@@ -87,6 +88,7 @@ static const int kingTable[] = {
 };
 
 static int tables[2][6][64];
+static int milliseconds_to_think;
 
 int negamax(Board& board, uint8_t depth, int alpha, int beta, int color, int maxDepth);
 Move think(Board& board);
@@ -110,11 +112,121 @@ inline uint32_t reduce(const uint32_t x, const uint32_t N) {
   return ((uint64_t)x * (uint64_t)N) >> 32;
 }
 
+void parseGo(std::string input = "")
+{
+    int wtime, btime;
+    std::stringstream stream;
+    if (input.length() == 0)
+    {
+        std::string line;
+        std::getline(std::cin, line);
+        stream.str(line);
+    }
+    else
+    {
+        stream.str(input);
+    }
+    std::string part;
+    stream >> part;
+    assert(part == "go");
+    stream >> part;
+    assert(part == "wtime");
+    stream >> wtime;
+    stream >> part;
+    assert(part == "btime");
+    stream >> btime;
+    milliseconds_to_think = 1000;
+}
+
+void parsePosition(Board& board)
+{
+    std::string line;
+    std::getline(std::cin, line);
+    std::stringstream stream;
+    stream.str(line);
+    std::string part;
+    std::string start;
+    stream >> part;
+    assert(part == "position");
+    stream >> part;
+    if (part == "startpos")
+        start = chess::constants::STARTPOS;
+    else if (part == "fen")
+    {
+        stream >> part;
+        start = part;
+    }
+    else assert(false);
+
+    board = Board(start);
+
+    stream >> part;
+    if (part == "moves")
+    {
+        stream >> part;
+        while (!stream.eof())
+        {
+            std::cout << part << std::endl;
+            board.makeMove(uci::uciToMove(board, part));
+            stream >> part;
+        }
+        std::cout << part << std::endl;
+        board.makeMove(uci::uciToMove(board, part));
+    }
+}
+
+void parseUci()
+{
+    std::string line;
+    std::getline(std::cin, line);
+    std::stringstream stream;
+    stream.str(line);
+    std::string part;
+    stream >> part;
+    assert(part == "uci");
+    std::cout << "id name 100 ELO Chess Engine" << std::endl;
+    std::cout << "id author Phillip Lane" << std::endl;
+    std::cout << "uciok" << std::endl;
+}
+
+void parseUcinewgame()
+{
+    std::string line;
+getline:
+    std::getline(std::cin, line);
+    std::stringstream stream;
+    stream.str(line);
+    std::string part;
+    stream >> part;
+    if (part == "debug")
+    {
+        stream >> part;
+        goto getline;
+    }
+    assert(part == "ucinewgame");
+}
+
+void parseIsready()
+{
+    std::string line;
+    std::getline(std::cin, line);
+    std::stringstream stream;
+    stream.str(line);
+    std::string part;
+    stream >> part;
+    assert(part == "isready");
+    std::cout << "readyok" << std::endl;
+}
+
 int main () {
-    Board board = Board(chess::constants::STARTPOS);
-    Movelist moves;
+    parseUci();
+    parseIsready();
+    parseUcinewgame();
+    Board board;
+    parsePosition(board);
     std::string input;
     transpositionTable = new ttEntry[TT_SIZE];
+    count = 0;
 
     for (auto i = 0; i < 64; i++)
     {
@@ -132,20 +244,37 @@ int main () {
         tables[1][5][i] = kingTable[i];
     }
 
-    std::cout << "ready" << std::endl;
-
     while (true)
     {
-        std::cin >> input;
-        Move move = uci::uciToMove(board, input);
-        board.makeMove(move);
+        if (std::cin.peek() == 'p')
+            parsePosition(board);
+        parseIsready();
 
-        count = 0;
+        Move move;
+
+        std::getline(std::cin, input);
+        if (input.substr(0, 2) == "go")
+        {
+            parseGo(input);
+        }
+        else
+        {
+            move = uci::uciToMove(board, input);
+            board.makeMove(move);
+
+            parseGo();
+        }
+
         auto bestmove = think(board);
+
+        #ifdef DEBUG
         std::cout << "evaluated " << count << " positions" << std::endl;
+        #endif
 
         std::cout << "bestmove " << uci::moveToUci(bestmove) << std::endl;
         board.makeMove(bestmove);
+
+        count = 0;
     }
 
     return 0;
@@ -190,11 +319,6 @@ Move think(Board& board)
     Movelist moves;
     movegen::legalmoves(moves, board);
 
-    if (moves.size() == 0)
-    {
-        std::cout << "game over" << std::endl;
-        return Move(0);
-    }
     if (moves.size() == 1)
         return moves[0];
 
@@ -205,14 +329,16 @@ Move think(Board& board)
     {
         for (auto depth = 4; ; depth++)
         {
-            std::cout << "thinking for " << SECONDS_TO_THINK << " seconds... depth = " << depth << std::endl;
+            #ifdef DEBUG
+            std::cout << "thinking for " << milliseconds_to_think << " milliseconds... depth = " << depth << std::endl;
+            #endif
 
             const auto orderedMoves = orderMoves(moves, board);
 
             for (const auto& move : orderedMoves)
             {
                 board.makeMove(move);
-                auto evaluateMove = -negamax(board, depth, WORST_EVAL, BEST_EVAL, 1, depth);
+                auto evaluateMove = -negamax(board, depth, WORST_EVAL, BEST_EVAL, board.sideToMove() == Color::WHITE ? 1 : -1, depth);
                 board.unmakeMove(move);
 
                 if (evaluateMove > bestEvaluation)
@@ -334,9 +460,11 @@ int calculateMaterial(const Board& board, Color color) {
 
 int heuristic(const Board& board, const int& distanceToMaxDepth, const Movelist& moves)
 {
-    if ((++count & 1023) == 0 &&
-            std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - begin).count() > SECONDS_TO_THINK)
-        throw TimeOut();
+    if ((++count & 1023) == 0)
+    {
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count() > milliseconds_to_think)
+            throw TimeOut();
+    }
 
     auto draw = false, whiteWon = false, blackWon = false;
 
