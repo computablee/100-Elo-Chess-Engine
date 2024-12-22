@@ -7,6 +7,7 @@
 #include <climits>
 #include <chrono>
 #include <list>
+#include <map>
 
 #define BEST_EVAL 1000000
 #define WORST_EVAL (-1000000)
@@ -90,6 +91,19 @@ int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDept
 Move think(Board& board);
 int heuristic(const Board& board, const int& distanceToMaxDepth, const Movelist& moves);
 
+enum ttFlag : uint8_t { EXACT, UPPERBOUND, LOWERBOUND };
+
+struct ttEntry
+{
+    int value;
+    ttFlag flag;
+    int depth;
+};
+
+std::map<uint64_t, ttEntry> transpositionTable;
+
+static int count;
+
 int main () {
     Board board = Board(chess::constants::STARTPOS);
     Movelist moves;
@@ -119,10 +133,13 @@ int main () {
         Move move = uci::uciToMove(board, input);
         board.makeMove(move);
 
+        count = 0;
         auto bestmove = think(board);
+        std::cout << "evaluated " << count << " positions" << std::endl;
 
         std::cout << "bestmove " << uci::moveToUci(bestmove) << std::endl;
         board.makeMove(bestmove);
+        transpositionTable.clear();
     }
 
     return 0;
@@ -224,6 +241,26 @@ bool isGameOver(const Board& board, const Movelist& moves, bool& draw, bool& whi
 
 int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDepth)
 {
+    auto alphaOrig = alpha;
+
+    if (transpositionTable.count(board.hash()))
+    {
+        auto ttentry = transpositionTable[board.hash()];
+
+        if (ttentry.depth >= depth)
+        {
+            if (ttentry.flag == EXACT)
+                return ttentry.value;
+            else if (ttentry.flag == LOWERBOUND)
+                alpha = std::max(alpha, ttentry.value);
+            else if (ttentry.flag == UPPERBOUND)
+                beta = std::min(beta, ttentry.value);
+
+            if (alpha >= beta)
+                return ttentry.value;
+        }
+    }
+
     Movelist moves;
     movegen::legalmoves(moves, board);
 
@@ -247,6 +284,19 @@ int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDept
             break;
     }
 
+    ttEntry ttentry;
+    ttentry.value = value;
+
+    if (value <= alphaOrig)
+        ttentry.flag = UPPERBOUND;
+    else if (value >= beta)
+        ttentry.flag = LOWERBOUND;
+    else
+        ttentry.flag = EXACT;
+
+    ttentry.depth = depth;
+    transpositionTable[board.hash()] = ttentry;
+
     return value;
 }
 
@@ -269,6 +319,7 @@ int calculateMaterial(const Board& board, Color color) {
 
 int heuristic(const Board& board, const int& distanceToMaxDepth, const Movelist& moves)
 {
+    count++;
     auto draw = false, whiteWon = false, blackWon = false;
 
     if (isGameOver(board, moves, draw, whiteWon, blackWon))
