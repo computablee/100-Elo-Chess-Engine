@@ -7,15 +7,17 @@
 #include <climits>
 #include <chrono>
 #include <list>
-#include <map>
+#include <unordered_map>
 #include <thread>
 
 #define BEST_EVAL 1000000
 #define WORST_EVAL (-1000000)
 #define TT_SIZE 10000000
-#define ID_NAME "100 ELO Chess Engine"
+#define ID_NAME "100 ELO Chess Engine (NMP)"
 //#define DEBUG
 #define USE_TT
+#define NMP
+#define EVAL 0
 
 constexpr inline int flip(int x) { return (x ^ 56) & 0xFF; }
 
@@ -172,7 +174,7 @@ void parsePosition(Board& board, const std::string& line)
             board.makeMove(uci::uciToMove(board, part));
             stream >> part;
         }
-        std::cout << part << std::endl;
+        
         board.makeMove(uci::uciToMove(board, part));
     }
 }
@@ -221,6 +223,10 @@ void parseEach(Board& board)
         {
             parseGo(board, line);
             progress = true;
+        }
+        else if (line == "quit")
+        {
+            exit(0);
         }
     }
 }
@@ -316,7 +322,7 @@ Move think(Board& board)
 
     try
     {
-        for (auto depth = 4; ; depth++)
+        for (auto depth = 1; ; depth++)
         {
             #ifdef DEBUG
             std::cout << "thinking for " << milliseconds_to_think << " milliseconds... depth = " << depth << std::endl;
@@ -393,6 +399,20 @@ int negamax(Board& board, uint8_t depth, int alpha, int beta, int color, int max
     }
 #endif
 
+    int value = WORST_EVAL;
+
+#ifdef NMP
+    if (depth >= 3 && !board.inCheck())
+    {
+        board.makeNullMove();
+        value = std::max(value, -negamax(board, depth - 3, -beta, -alpha, -color, maxDepth));
+        board.unmakeNullMove();
+
+        if (value >= beta)
+            return value;
+    }
+#endif
+
     Movelist moves;
     movegen::legalmoves(moves, board);
 
@@ -400,8 +420,6 @@ int negamax(Board& board, uint8_t depth, int alpha, int beta, int color, int max
 
     if (depth == 0 || isGameOver(board, moves, _, __, ___))
         return heuristic(board, maxDepth - depth, moves) * color;
-
-    int value = WORST_EVAL;
 
     const auto orderedMoves = orderMoves(moves, board);
 
@@ -439,6 +457,7 @@ static const int pieceValues[] = { 100, 300, 300, 500, 900, 0 };
 int calculateMaterial(const Board& board, Color color) {
     int score = 0;
 
+#if EVAL == 0
     Square max_square(64);
     for (Square i = 0; i < max_square; i++) {
         const auto piece = board.at(i);
@@ -447,6 +466,13 @@ int calculateMaterial(const Board& board, Color color) {
                 + tables[static_cast<int>(color)][static_cast<int>(piece.type())][i.index()];
         }
     }
+#else
+    score += std::popcount(board.pieces(PieceType::PAWN, color).getBits());
+    score += std::popcount(board.pieces(PieceType::BISHOP, color).getBits()) * 3;
+    score += std::popcount(board.pieces(PieceType::KNIGHT, color).getBits()) * 3;
+    score += std::popcount(board.pieces(PieceType::ROOK, color).getBits()) * 5;
+    score += std::popcount(board.pieces(PieceType::QUEEN, color).getBits()) * 9;
+#endif
 
     return score;
 }

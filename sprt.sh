@@ -1,4 +1,4 @@
-cutechess-cli -engine cmd=100elo-no-tt -engine cmd=100elo \
-    -each tc=100+5 proto=uci restart=on -rounds 64 -concurrency 12 \
-    -sprt elo0=100 elo1=0 alpha=0.05 beta=0.05 \
-    -openings file=8moves_v3.pgn plies=8 -debug
+cutechess-cli -engine cmd=100elo-nmp -engine cmd=100elo \
+    -each tc=10+0.1 proto=uci restart=on -rounds 128000 -concurrency 14 \
+    -sprt elo0=0 elo1=10 alpha=0.05 beta=0.05 \
+    -openings file=8moves_v3.pgn plies=8
