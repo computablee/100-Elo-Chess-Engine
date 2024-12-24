@@ -112,9 +112,9 @@ inline uint32_t reduce(const uint32_t x, const uint32_t N) {
   return ((uint64_t)x * (uint64_t)N) >> 32;
 }
 
-void parseGo(std::string input = "")
+void parseGo(const Board& board, std::string input = "")
 {
-    int wtime, btime;
+    int wtime, btime, winc, binc;
     std::stringstream stream;
     if (input.length() == 0)
     {
@@ -135,7 +135,17 @@ void parseGo(std::string input = "")
     stream >> part;
     assert(part == "btime");
     stream >> btime;
-    milliseconds_to_think = 1000;
+    stream >> part;
+    assert(part == "winc");
+    stream >> winc;
+    stream >> part;
+    assert(part == "binc");
+    stream >> binc;
+
+    if (board.sideToMove() == Color::WHITE)
+        milliseconds_to_think = wtime / 20 + winc / 2;
+    else
+        milliseconds_to_think = btime / 20 + binc / 2;
 }
 
 void parsePosition(Board& board)
@@ -184,7 +194,7 @@ void parseUci()
     std::string part;
     stream >> part;
     assert(part == "uci");
-    std::cout << "id name 100 ELO Chess Engine" << std::endl;
+    std::cout << "id name 100 ELO Chess Engine (modified)" << std::endl;
     std::cout << "id author Phillip Lane" << std::endl;
     std::cout << "uciok" << std::endl;
 }
@@ -255,14 +265,14 @@ int main () {
         std::getline(std::cin, input);
         if (input.substr(0, 2) == "go")
         {
-            parseGo(input);
+            parseGo(board, input);
         }
         else
         {
             move = uci::uciToMove(board, input);
             board.makeMove(move);
 
-            parseGo();
+            parseGo(board);
         }
 
         auto bestmove = think(board);
