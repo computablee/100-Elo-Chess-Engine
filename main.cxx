@@ -13,10 +13,10 @@
 #define BEST_EVAL 1000000
 #define WORST_EVAL (-1000000)
 #define TT_SIZE 10000000
-#define ID_NAME "100 ELO Chess Engine (NMP)"
-//#define DEBUG
+#define ID_NAME "100 ELO Chess Engine (Quiescent)"
+#define DEBUG
 #define USE_TT
-#define NMP
+//#define NMP
 #define EVAL 0
 
 constexpr inline int flip(int x) { return (x ^ 56) & 0xFF; }
@@ -94,9 +94,10 @@ static const int kingTable[] = {
 static int tables[2][6][64];
 static int milliseconds_to_think;
 
-int negamax(Board& board, uint8_t depth, int alpha, int beta, int color, int maxDepth);
+int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDepth);
 Move think(Board& board);
 int heuristic(const Board& board, const int& distanceToMaxDepth, const Movelist& moves);
+int quiescence(Board& board, int alpha, int beta, const int depth, const int maxDepth, const int color);
 
 #ifdef USE_TT
 enum ttFlag : uint8_t { EXACT, UPPERBOUND, LOWERBOUND };
@@ -375,8 +376,21 @@ bool isGameOver(const Board& board, const Movelist& moves, bool& draw, bool& whi
     return false;
 }
 
-int negamax(Board& board, uint8_t depth, int alpha, int beta, int color, int maxDepth)
+int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDepth)
 {
+
+#ifdef NMP
+    if (depth >= 3 && !board.inCheck())
+    {
+        board.makeNullMove();
+        int score = -negamax(board, depth - 3, -beta, -beta + 1, -color, maxDepth);
+        board.unmakeNullMove();
+
+        if (score >= beta)
+            return score;
+    }
+#endif
+
 #ifdef USE_TT
     auto alphaOrig = alpha;
 
@@ -401,24 +415,15 @@ int negamax(Board& board, uint8_t depth, int alpha, int beta, int color, int max
 
     int value = WORST_EVAL;
 
-#ifdef NMP
-    if (depth >= 3 && !board.inCheck())
-    {
-        board.makeNullMove();
-        value = std::max(value, -negamax(board, depth - 3, -beta, -alpha, -color, maxDepth));
-        board.unmakeNullMove();
-
-        if (value >= beta)
-            return value;
-    }
-#endif
-
     Movelist moves;
     movegen::legalmoves(moves, board);
 
     bool _, __, ___;
 
-    if (depth == 0 || isGameOver(board, moves, _, __, ___))
+    if (depth == 0)
+        return quiescence(board, alpha, beta, depth, maxDepth, color);
+    
+    if(isGameOver(board, moves, _, __, ___))
         return heuristic(board, maxDepth - depth, moves) * color;
 
     const auto orderedMoves = orderMoves(moves, board);
@@ -501,4 +506,38 @@ int heuristic(const Board& board, const int& distanceToMaxDepth, const Movelist&
     auto whitescore = calculateMaterial(board, Color::WHITE);
     auto blackscore = calculateMaterial(board, Color::BLACK);
     return whitescore - blackscore;
+}
+
+int quiescence(Board& board, int alpha, int beta, const int depth, const int maxDepth, const int color)
+{
+    Movelist moves;
+    movegen::legalmoves(moves, board);
+
+    int value = heuristic(board, maxDepth - depth, moves) * color;
+
+    if (value >= beta)
+        return beta;
+    else if (value > alpha)
+        alpha = value;
+
+    if (depth >= maxDepth + 10)
+        return alpha;
+
+    orderMoves(moves, board);
+
+    for (const auto& move : moves)
+    {
+        if (!board.isCapture(move))
+            continue;
+        board.makeMove(move);
+        value = -quiescence(board, -beta, -alpha, depth - 1, maxDepth, -color);
+        board.unmakeMove(move);
+
+        if (value >= beta)
+            return beta;
+        else if (value > alpha)
+            alpha = value;
+    }
+
+    return alpha;
 }
