@@ -13,7 +13,9 @@
 #define BEST_EVAL 1000000
 #define WORST_EVAL (-1000000)
 #define TT_SIZE 10000000
+#define ID_NAME "100 ELO Chess Engine"
 //#define DEBUG
+#define USE_TT
 
 constexpr inline int flip(int x) { return (x ^ 56) & 0xFF; }
 
@@ -94,6 +96,7 @@ int negamax(Board& board, uint8_t depth, int alpha, int beta, int color, int max
 Move think(Board& board);
 int heuristic(const Board& board, const int& distanceToMaxDepth, const Movelist& moves);
 
+#ifdef USE_TT
 enum ttFlag : uint8_t { EXACT, UPPERBOUND, LOWERBOUND };
 
 struct ttEntry
@@ -105,6 +108,7 @@ struct ttEntry
 };
 
 ttEntry* transpositionTable;
+#endif
 
 static int count;
 
@@ -165,7 +169,6 @@ void parsePosition(Board& board, const std::string& line)
         stream >> part;
         while (!stream.eof())
         {
-            std::cout << part << std::endl;
             board.makeMove(uci::uciToMove(board, part));
             stream >> part;
         }
@@ -185,7 +188,7 @@ void parseStart(Board& board)
 
         if (line == "uci")
         {
-            std::cout << "id name 100 ELO Chess Engine" << std::endl;
+            std::cout << "id name " << ID_NAME << std::endl;
             std::cout << "id author Phillip Lane" << std::endl;
             std::cout << "uciok" << std::endl;
         }
@@ -227,7 +230,9 @@ int main()
     Board board;
     parseStart(board);
     std::string input;
+#ifdef USE_TT
     transpositionTable = new ttEntry[TT_SIZE];
+#endif
     count = 0;
 
     for (auto i = 0; i < 64; i++)
@@ -366,6 +371,7 @@ bool isGameOver(const Board& board, const Movelist& moves, bool& draw, bool& whi
 
 int negamax(Board& board, uint8_t depth, int alpha, int beta, int color, int maxDepth)
 {
+#ifdef USE_TT
     auto alphaOrig = alpha;
 
     auto ttentry = transpositionTable[reduce(board.hash(), TT_SIZE)];
@@ -385,6 +391,7 @@ int negamax(Board& board, uint8_t depth, int alpha, int beta, int color, int max
                 return ttentry.value;
         }
     }
+#endif
 
     Movelist moves;
     movegen::legalmoves(moves, board);
@@ -409,6 +416,7 @@ int negamax(Board& board, uint8_t depth, int alpha, int beta, int color, int max
             break;
     }
 
+#ifdef USE_TT
     ttentry.value = value;
 
     if (value <= alphaOrig)
@@ -421,6 +429,7 @@ int negamax(Board& board, uint8_t depth, int alpha, int beta, int color, int max
     ttentry.depth = depth;
     ttentry.hash = board.hash();
     transpositionTable[reduce(board.hash(), TT_SIZE)] = ttentry;
+#endif
 
     return value;
 }
