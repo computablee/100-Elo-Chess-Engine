@@ -112,20 +112,11 @@ inline uint32_t reduce(const uint32_t x, const uint32_t N) {
   return ((uint64_t)x * (uint64_t)N) >> 32;
 }
 
-void parseGo(const Board& board, std::string input = "")
+void parseGo(const Board& board, std::string input)
 {
     int wtime, btime, winc, binc;
     std::stringstream stream;
-    if (input.length() == 0)
-    {
-        std::string line;
-        std::getline(std::cin, line);
-        stream.str(line);
-    }
-    else
-    {
-        stream.str(input);
-    }
+    stream.str(input);
     std::string part;
     stream >> part;
     assert(part == "go");
@@ -148,10 +139,8 @@ void parseGo(const Board& board, std::string input = "")
         milliseconds_to_think = btime / 20 + binc / 2;
 }
 
-void parsePosition(Board& board)
+void parsePosition(Board& board, const std::string& line)
 {
-    std::string line;
-    std::getline(std::cin, line);
     std::stringstream stream;
     stream.str(line);
     std::string part;
@@ -185,55 +174,58 @@ void parsePosition(Board& board)
     }
 }
 
-void parseUci()
+void parseStart(Board& board)
 {
     std::string line;
-    std::getline(std::cin, line);
-    std::stringstream stream;
-    stream.str(line);
-    std::string part;
-    stream >> part;
-    assert(part == "uci");
-    std::cout << "id name 100 ELO Chess Engine (modified)" << std::endl;
-    std::cout << "id author Phillip Lane" << std::endl;
-    std::cout << "uciok" << std::endl;
-}
+    auto progress = false;
 
-void parseUcinewgame()
-{
-    std::string line;
-getline:
-    std::getline(std::cin, line);
-    std::stringstream stream;
-    stream.str(line);
-    std::string part;
-    stream >> part;
-    if (part == "debug")
+    while (!progress)
     {
-        stream >> part;
-        goto getline;
+        std::getline(std::cin, line);
+
+        if (line == "uci")
+        {
+            std::cout << "id name 100 ELO Chess Engine" << std::endl;
+            std::cout << "id author Phillip Lane" << std::endl;
+            std::cout << "uciok" << std::endl;
+        }
+        else if (line == "isready")
+        {
+            std::cout << "readyok" << std::endl;
+            progress = true;
+        }
     }
-    assert(part == "ucinewgame");
 }
 
-void parseIsready()
+void parseEach(Board& board)
 {
     std::string line;
-    std::getline(std::cin, line);
-    std::stringstream stream;
-    stream.str(line);
-    std::string part;
-    stream >> part;
-    assert(part == "isready");
-    std::cout << "readyok" << std::endl;
+    auto progress = false;
+
+    while (!progress)
+    {
+        std::getline(std::cin, line);
+        
+        if (line.substr(0, 8) == "position")
+        {
+            parsePosition(board, line);
+        }
+        else if (line == "isready")
+        {
+            std::cout << "readyok" << std::endl;
+        }
+        else if (line.substr(0, 2) == "go")
+        {
+            parseGo(board, line);
+            progress = true;
+        }
+    }
 }
 
-int main () {
-    parseUci();
-    parseIsready();
-    parseUcinewgame();
+int main()
+{
     Board board;
-    parsePosition(board);
+    parseStart(board);
     std::string input;
     transpositionTable = new ttEntry[TT_SIZE];
     count = 0;
@@ -256,25 +248,7 @@ int main () {
 
     while (true)
     {
-        if (std::cin.peek() == 'p')
-            parsePosition(board);
-        parseIsready();
-
-        Move move;
-
-        std::getline(std::cin, input);
-        if (input.substr(0, 2) == "go")
-        {
-            parseGo(board, input);
-        }
-        else
-        {
-            move = uci::uciToMove(board, input);
-            board.makeMove(move);
-
-            parseGo(board);
-        }
-
+        parseEach(board);
         auto bestmove = think(board);
 
         #ifdef DEBUG
