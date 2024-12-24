@@ -13,7 +13,7 @@
 #define BEST_EVAL 1000000
 #define WORST_EVAL (-1000000)
 #define TT_SIZE 10000000
-#define ID_NAME "100 ELO Chess Engine (Quiescent)"
+#define ID_NAME "100 ELO Chess Engine"
 #define DEBUG
 #define USE_TT
 //#define NMP
@@ -108,12 +108,15 @@ struct ttEntry
     int value;
     ttFlag flag;
     uint8_t depth;
+    Move bestMove;
 };
 
 ttEntry* transpositionTable;
 #endif
 
 static int count;
+
+static int maxPly;
 
 inline uint32_t reduce(const uint32_t x, const uint32_t N) {
   return ((uint64_t)x * (uint64_t)N) >> 32;
@@ -241,6 +244,7 @@ int main()
     transpositionTable = new ttEntry[TT_SIZE];
 #endif
     count = 0;
+    maxPly = 0;
 
     for (auto i = 0; i < 64; i++)
     {
@@ -265,6 +269,7 @@ int main()
 
         #ifdef DEBUG
         std::cout << "evaluated " << count << " positions" << std::endl;
+        std::cout << "maximum depth searched was " << maxPly << std::endl;
         #endif
 
         std::cout << "bestmove " << uci::moveToUci(bestmove) << std::endl;
@@ -284,6 +289,36 @@ std::list<Move> orderMoves(const Movelist& moves, const Board& board)
 
     orderedMoves.sort([&board](const Move& a, const Move& b) {
         if (board.isCapture(a) && !board.isCapture(b))
+            return true;
+        else if (!board.isCapture(a) && board.isCapture(b))
+            return false;
+        else if (board.isCapture(a) && board.isCapture(b))
+        {
+            if (board.at(a.to()) > board.at(b.to()))
+                return true;
+            else if (board.at(a.to()) < board.at(b.to()))
+                return false;
+            else
+                return board.at(a.from()) < board.at(b.from());
+        }
+        else return true;
+    });
+
+    return orderedMoves;
+}
+
+std::list<Move> orderMoves(const Movelist& moves, const Board& board, const Move& bestMove)
+{
+    std::list<Move> orderedMoves;
+    for (const auto& move : moves)
+        orderedMoves.push_back(move);
+
+    orderedMoves.sort([&board, &bestMove](const Move& a, const Move& b) {
+        if (a == bestMove)
+            return true;
+        else if (b == bestMove)
+            return false;
+        else if (board.isCapture(a) && !board.isCapture(b))
             return true;
         else if (!board.isCapture(a) && board.isCapture(b))
             return false;
@@ -329,7 +364,7 @@ Move think(Board& board)
             std::cout << "thinking for " << milliseconds_to_think << " milliseconds... depth = " << depth << std::endl;
             #endif
 
-            const auto orderedMoves = orderMoves(moves, board);
+            const auto orderedMoves = orderMoves(moves, board, bestMove);
 
             for (const auto& move : orderedMoves)
             {
@@ -378,6 +413,7 @@ bool isGameOver(const Board& board, const Movelist& moves, bool& draw, bool& whi
 
 int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDepth)
 {
+    maxPly = std::max(maxDepth - depth, maxPly);
 
 #ifdef NMP
     if (depth >= 3 && !board.inCheck())
@@ -396,6 +432,8 @@ int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDept
 
     auto ttentry = transpositionTable[reduce(board.hash(), TT_SIZE)];
 
+    Move previousBestMove;
+
     if (ttentry.hash == board.hash())
     {
         if (ttentry.depth >= depth)
@@ -410,6 +448,8 @@ int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDept
             if (alpha >= beta)
                 return ttentry.value;
         }
+
+        previousBestMove = ttentry.bestMove;
     }
 #endif
 
@@ -426,7 +466,9 @@ int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDept
     if(isGameOver(board, moves, _, __, ___))
         return heuristic(board, maxDepth - depth, moves) * color;
 
-    const auto orderedMoves = orderMoves(moves, board);
+    const auto orderedMoves = orderMoves(moves, board, previousBestMove);
+
+    Move bestMove;
 
     for (const auto& move : orderedMoves)
     {
@@ -434,24 +476,33 @@ int negamax(Board& board, int depth, int alpha, int beta, int color, int maxDept
         value = std::max(value, -negamax(board, depth - 1, -beta, -alpha, -color, maxDepth));
         board.unmakeMove(move);
 
-        alpha = std::max(alpha, value);
+        if (value > alpha)
+        {
+            alpha = value;
+            bestMove = move;
+        }
+
         if (alpha >= beta)
             break;
     }
 
 #ifdef USE_TT
-    ttentry.value = value;
+    if (ttentry.hash != board.hash() || depth > ttentry.depth)
+    {
+        ttentry.value = value;
 
-    if (value <= alphaOrig)
-        ttentry.flag = UPPERBOUND;
-    else if (value >= beta)
-        ttentry.flag = LOWERBOUND;
-    else
-        ttentry.flag = EXACT;
+        if (value <= alphaOrig)
+            ttentry.flag = UPPERBOUND;
+        else if (value >= beta)
+            ttentry.flag = LOWERBOUND;
+        else
+            ttentry.flag = EXACT;
 
-    ttentry.depth = depth;
-    ttentry.hash = board.hash();
-    transpositionTable[reduce(board.hash(), TT_SIZE)] = ttentry;
+        ttentry.depth = depth;
+        ttentry.hash = board.hash();
+        ttentry.bestMove = bestMove;
+        transpositionTable[reduce(board.hash(), TT_SIZE)] = ttentry;
+    }
 #endif
 
     return value;
@@ -510,6 +561,8 @@ int heuristic(const Board& board, const int& distanceToMaxDepth, const Movelist&
 
 int quiescence(Board& board, int alpha, int beta, const int depth, const int maxDepth, const int color)
 {
+    maxPly = std::max(maxDepth - depth, maxPly);
+
     Movelist moves;
     movegen::legalmoves(moves, board);
 
