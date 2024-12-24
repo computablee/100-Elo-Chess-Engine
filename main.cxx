@@ -13,7 +13,7 @@
 #define BEST_EVAL 1000000
 #define WORST_EVAL (-1000000)
 #define TT_SIZE 10000000
-#define ID_NAME "100 ELO Chess Engine (eval)"
+#define ID_NAME "100 ELO Chess Engine"
 #define DEBUG
 #define USE_TT
 //#define NMP
