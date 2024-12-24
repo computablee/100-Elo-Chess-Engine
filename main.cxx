@@ -18,6 +18,7 @@
 #define USE_TT
 //#define NMP
 #define EVAL 0
+#define HUMAN_THINK 10000
 
 constexpr inline int flip(int x) { return (x ^ 56) & 0xFF; }
 
@@ -182,8 +183,8 @@ ttEntry* transpositionTable;
 #endif
 
 static int count;
-
 static int maxPly;
+static bool usingUci;
 
 inline uint32_t reduce(const uint32_t x, const uint32_t N) {
   return ((uint64_t)x * (uint64_t)N) >> 32;
@@ -261,6 +262,7 @@ void parseStart(Board& board)
 
         if (line == "uci")
         {
+            usingUci = true;
             std::cout << "id name " << ID_NAME << std::endl;
             std::cout << "id author Phillip Lane" << std::endl;
             std::cout << "uciok" << std::endl;
@@ -268,6 +270,11 @@ void parseStart(Board& board)
         else if (line == "isready")
         {
             std::cout << "readyok" << std::endl;
+            progress = true;
+        }
+        else if (line == "human")
+        {
+            milliseconds_to_think = HUMAN_THINK;
             progress = true;
         }
     }
@@ -304,8 +311,10 @@ void parseEach(Board& board)
 
 int main()
 {
+    usingUci = false;
     Board board;
     parseStart(board);
+    if (!usingUci) board = Board(chess::constants::STARTPOS);
     std::string input;
 #ifdef USE_TT
     transpositionTable = new ttEntry[TT_SIZE];
@@ -343,7 +352,16 @@ int main()
 
     while (true)
     {
-        parseEach(board);
+        if (usingUci)
+            parseEach(board);
+        else
+        {
+            std::string move;
+            std::cin >> move;
+
+            board.makeMove(uci::uciToMove(board, move));
+        }
+
         auto bestmove = think(board);
 
         #ifdef DEBUG
