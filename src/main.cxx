@@ -1,19 +1,7 @@
 #include <chess.hpp>
 #include <string>
-#include <iostream>
-#include <limits>
-#include <utility>
-#include <bit>
-#include <climits>
-#include <chrono>
-#include <list>
-#include <unordered_map>
-#include <thread>
 
-#include "helpers.hxx"
-#include "pst.hxx"
 #include "settings.hxx"
-#include "tt.hxx"
 #include "uci.hxx"
 #include "search.hxx"
 
