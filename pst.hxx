@@ -8,21 +8,21 @@ namespace Engine::PST
     class PieceSquareTable
     {
     private:
-        int middlegameTables[6][64];
-        int endgameTables[6][64];
+        int32_t middlegameTables[6][64];
+        int32_t endgameTables[6][64];
 
     public:
         PieceSquareTable();
 
         inline int32_t get_value_middlegame(chess::Color color, chess::PieceType pieceType, uint8_t square)
         {
-            if (color == chess::Color::BLACK) square = flip(square);
+            if (color == chess::Color::BLACK) square = Engine::Helpers::flip(square);
             return middlegameTables[static_cast<int>(pieceType)][square];
         }
 
         inline int32_t get_value_endgame(chess::Color color, chess::PieceType pieceType, uint8_t square)
         {
-            if (color == chess::Color::BLACK) square = flip(square);
+            if (color == chess::Color::BLACK) square = Engine::Helpers::flip(square);
             return endgameTables[static_cast<int>(pieceType)][square];
         }
     };

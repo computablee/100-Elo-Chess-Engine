@@ -1,6 +1,9 @@
 # Build directory
 build/*
 
+# Stash benchmarks
+stash-*
+
 # Prerequisites
 *.d
 

@@ -26,12 +26,12 @@ namespace Engine::TranspositionTable
 
         inline ttEntry get_entry(chess::Board& board)
         {
-            return this->transpositionTable[reduce(board.hash(), this->elements)];
+            return this->transpositionTable[Engine::Helpers::reduce(board.hash(), this->elements)];
         }
 
         inline void set_entry(chess::Board& board, ttEntry& entry)
         {
-            this->transpositionTable[reduce(board.hash(), this->elements)] = entry;
+            this->transpositionTable[Engine::Helpers::reduce(board.hash(), this->elements)] = entry;
         }
     };
 }

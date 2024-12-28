@@ -10,7 +10,9 @@ add_executable(${PROJECT_NAME}
     pst.cxx
     settings.cxx
     tt.cxx
-    uci.cxx)
+    uci.cxx
+    search.cxx
+    evaluate.cxx)
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -O3 -march=native)
 
