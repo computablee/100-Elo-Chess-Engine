@@ -12,4 +12,6 @@ namespace Engine::UCI
     void parseStart(Engine::Settings& settings);
     
     uint32_t parseEach(chess::Board& board);
+
+    void announceMove(chess::Move& move);
 }

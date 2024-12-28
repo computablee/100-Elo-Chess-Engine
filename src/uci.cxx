@@ -118,4 +118,9 @@ namespace Engine::UCI
 
         return 0;
     }
+
+    void announceMove(chess::Move& move)
+    {
+        std::cout << "bestmove " << uci::moveToUci(move) << std::endl;
+    }
 }

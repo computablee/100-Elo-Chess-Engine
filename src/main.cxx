@@ -35,10 +35,8 @@ int main()
     while (true)
     {
         milliseconds_to_think = parseEach(board);
-
         auto bestmove = iterativeDeepening(board, settings);
-
-        std::cout << "bestmove " << uci::moveToUci(bestmove) << std::endl;
+        announceMove(bestmove);
         board.makeMove(bestmove);
     }
 
