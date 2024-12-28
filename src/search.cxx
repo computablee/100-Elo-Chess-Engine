@@ -16,9 +16,12 @@ namespace Engine::Search
         maxPly = 0;
 
         begin = std::chrono::steady_clock::now();
-        const Board boardCopy = board;
+        const auto boardCopy = board;
 
-        Move bestMove;
+        Movelist moves;
+        movegen::legalmoves(moves, board);
+
+        Move bestMove = moves[0];
 
         try
         {
@@ -103,9 +106,7 @@ namespace Engine::Search
             board.unmakeMove(move);
 
             if (value > alpha)
-            {
                 alpha = value;
-            }
 
             if (alpha >= beta)
                 break;
@@ -113,7 +114,7 @@ namespace Engine::Search
 
         if (ttentry.hash != board.hash() || depth > ttentry.depth)
         {
-            ttentry.value = bestSequence.get_evaluation();;
+            ttentry.value = bestSequence.get_evaluation();
 
             if (ttentry.value <= alphaOrig)
                 ttentry.flag = UPPERBOUND;
@@ -144,9 +145,6 @@ namespace Engine::Search
             return beta;
         else if (value > alpha)
             alpha = value;
-
-        if (depth >= maxDepth + 10)
-            return alpha;
 
         orderMoves(moves, board);
 
