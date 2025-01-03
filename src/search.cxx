@@ -146,12 +146,13 @@ namespace Engine::Search
         else if (value > alpha)
             alpha = value;
 
-        orderMoves(moves, board);
+        const auto orderedMoves = orderMoves(moves, board);
 
-        for (const auto& move : moves)
+        for (const auto& move : orderedMoves)
         {
             if (!board.isCapture(move))
-                continue;
+                break;
+
             board.makeMove(move);
             value = -quiescence(board, -beta, -alpha, depth - 1, ply + 1, -color, settings);
             board.unmakeMove(move);
