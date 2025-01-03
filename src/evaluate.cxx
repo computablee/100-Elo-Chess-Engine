@@ -42,12 +42,11 @@ namespace Engine::Evaluate
         int32_t eg[2] = { 0 };
         int phase = 0;
 
-        Square max_square(64);
-        for (Square i = 0; i < max_square; i++) {
+        for (uint32_t i = 0; i < 64; i++) {
             const auto piece = board.at(i);
             if (piece != Piece::NONE) {
-                mg[static_cast<int>(piece.color())] += pieceSquareTable.get_value_middlegame(piece.color(), piece.type(), i.index());
-                eg[static_cast<int>(piece.color())] += pieceSquareTable.get_value_endgame(piece.color(), piece.type(), i.index());
+                mg[static_cast<int>(piece.color())] += pieceSquareTable.get_value_middlegame(piece.color(), piece.type(), i);
+                eg[static_cast<int>(piece.color())] += pieceSquareTable.get_value_endgame(piece.color(), piece.type(), i);
                 phase += gamePhase[static_cast<int>(piece.type())];
             }
         }

@@ -92,11 +92,11 @@ namespace Engine::Search
         if (auto gameover = isGameOver(board, moves))
             return Sequence(heuristic(board, ply, gameover, settings) * color);
 
-        const auto orderedMoves = orderMoves(moves, board, previousBestMove);
+        orderMoves(moves, board, previousBestMove);
 
         Sequence bestSequence(settings.get_worst_eval());
 
-        for (const auto& move : orderedMoves)
+        for (const auto& move : moves)
         {
             board.makeMove(move);
             auto sequence = search(board, -beta, -alpha, depth - 1, ply + 1, -color, settings);
@@ -146,9 +146,9 @@ namespace Engine::Search
         else if (value > alpha)
             alpha = value;
 
-        const auto orderedMoves = orderMoves(moves, board);
+        orderMoves(moves, board);
 
-        for (const auto& move : orderedMoves)
+        for (const auto& move : moves)
         {
             if (!board.isCapture(move))
                 break;

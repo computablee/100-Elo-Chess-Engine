@@ -25,13 +25,9 @@ namespace Engine::Helpers
         return ONGOING;
     }
 
-    std::list<Move> orderMoves(const Movelist& moves, const Board& board)
+    void orderMoves(Movelist& moves, const Board& board)
     {
-        std::list<Move> orderedMoves;
-        for (const auto& move : moves)
-            orderedMoves.push_back(move);
-
-        orderedMoves.sort([&board](const Move& a, const Move& b) {
+        std::sort(moves.begin(), moves.end(), [&board](const Move& a, const Move& b) {
             if (board.isCapture(a) && !board.isCapture(b))
                 return true;
             else if (!board.isCapture(a) && board.isCapture(b))
@@ -45,19 +41,13 @@ namespace Engine::Helpers
                 else
                     return board.at(a.from()) < board.at(b.from());
             }
-            else return true;
+            else return a.from() < b.from();
         });
-
-        return orderedMoves;
     }
 
-    std::list<Move> orderMoves(const Movelist& moves, const Board& board, const Move& bestMove)
+    void orderMoves(Movelist& moves, const Board& board, const Move& bestMove)
     {
-        std::list<Move> orderedMoves;
-        for (const auto& move : moves)
-            orderedMoves.push_back(move);
-        
-        orderedMoves.sort([&board, &bestMove](const Move& a, const Move& b) {
+        std::sort(moves.begin(), moves.end(), [&board, &bestMove](const Move& a, const Move& b) {
             if (a == bestMove)
                 return true;
             else if (b == bestMove)
@@ -75,9 +65,7 @@ namespace Engine::Helpers
                 else
                     return board.at(a.from()) < board.at(b.from());
             }
-            else return true;
+            else return a.from() < b.from();
         });
-    
-        return orderedMoves;
     }
 }
