@@ -49,9 +49,9 @@ namespace Engine::Search
 
     inline std::chrono::steady_clock::time_point begin;
 
-    Sequence search(chess::Board& board, int32_t alpha, int32_t beta, const int depth, const int maxDepth, const int color, const Settings& settings);
+    Sequence search(chess::Board& board, int32_t alpha, int32_t beta, const int depth, const int ply, const int color, const Settings& settings);
 
     chess::Move iterativeDeepening(chess::Board& board, const Settings& settings);
 
-    int32_t quiescence(chess::Board& board, int32_t alpha, int32_t beta, const int depth, const int maxDepth, const int color, const Settings& settings);
+    int32_t quiescence(chess::Board& board, int32_t alpha, int32_t beta, const int depth, const int ply, const int color, const Settings& settings);
 }

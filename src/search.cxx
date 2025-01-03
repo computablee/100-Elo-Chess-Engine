@@ -31,7 +31,7 @@ namespace Engine::Search
                 std::cout << "thinking for " << milliseconds_to_think << " milliseconds... depth = " << depth << std::endl;
                 #endif
 
-                auto bestMoveSequence = search(board, settings.get_worst_eval(), settings.get_best_eval(), depth, depth, board.sideToMove() == Color::WHITE ? 1 : -1, settings);
+                auto bestMoveSequence = search(board, settings.get_worst_eval(), settings.get_best_eval(), depth, 1, board.sideToMove() == Color::WHITE ? 1 : -1, settings);
                 bestMove = bestMoveSequence.get_first_move();
             }
         }
@@ -43,9 +43,9 @@ namespace Engine::Search
         return bestMove;
     }
 
-    Sequence search(Board& board, int32_t alpha, int32_t beta, const int depth, const int maxDepth, const int color, const Settings& settings)
+    Sequence search(Board& board, int32_t alpha, int32_t beta, const int depth, const int ply, const int color, const Settings& settings)
     {
-        maxPly = std::max(maxDepth - depth, maxPly);
+        maxPly = std::max(ply, maxPly);
 
 #ifdef NMP
         if (depth >= 3 && !board.inCheck())
@@ -87,10 +87,10 @@ namespace Engine::Search
         movegen::legalmoves(moves, board);
 
         if (depth == 0)
-            return Sequence(quiescence(board, alpha, beta, depth, maxDepth, color, settings));
+            return Sequence(quiescence(board, alpha, beta, depth, ply + 1, color, settings));
         
         if (auto gameover = isGameOver(board, moves))
-            return Sequence(heuristic(board, maxDepth - depth, gameover, settings) * color);
+            return Sequence(heuristic(board, ply, gameover, settings) * color);
 
         const auto orderedMoves = orderMoves(moves, board, previousBestMove);
 
@@ -99,7 +99,7 @@ namespace Engine::Search
         for (const auto& move : orderedMoves)
         {
             board.makeMove(move);
-            auto sequence = search(board, -beta, -alpha, depth - 1, maxDepth, -color, settings);
+            auto sequence = search(board, -beta, -alpha, depth - 1, ply + 1, -color, settings);
             auto value = -sequence.get_evaluation();
             if (value > bestSequence.get_evaluation())
                 bestSequence = Sequence(value, move, std::move(sequence));
@@ -132,14 +132,14 @@ namespace Engine::Search
         return bestSequence;
     }
 
-    int32_t quiescence(Board& board, int32_t alpha, int32_t beta, const int depth, const int maxDepth, const int color, const Settings& settings)
+    int32_t quiescence(Board& board, int32_t alpha, int32_t beta, const int depth, const int ply, const int color, const Settings& settings)
     {
-        maxPly = std::max(maxDepth - depth, maxPly);
+        maxPly = std::max(ply, maxPly);
 
         Movelist moves;
         movegen::legalmoves(moves, board);
 
-        int value = heuristic(board, maxDepth - depth, isGameOver(board, moves), settings) * color;
+        int value = heuristic(board, ply + 1, isGameOver(board, moves), settings) * color;
 
         if (value >= beta)
             return beta;
@@ -153,7 +153,7 @@ namespace Engine::Search
             if (!board.isCapture(move))
                 continue;
             board.makeMove(move);
-            value = -quiescence(board, -beta, -alpha, depth - 1, maxDepth, -color, settings);
+            value = -quiescence(board, -beta, -alpha, depth - 1, ply + 1, -color, settings);
             board.unmakeMove(move);
 
             if (value >= beta)

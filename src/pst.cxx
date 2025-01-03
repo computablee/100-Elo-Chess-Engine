@@ -132,6 +132,9 @@ static const int32_t endgameKingTable[64] = {
     -53, -34, -21, -11, -28, -14, -24, -43
 };
 
+static const int pieces[6] = { 82, 337, 365, 477, 1025 };
+static const int endgamePieces[6] = { 94, 281, 297, 512, 936 };
+
 using namespace Engine::PST;
 using namespace chess;
 
@@ -139,17 +142,17 @@ PieceSquareTable::PieceSquareTable()
 {
     for (auto i = 0; i < 64; i++)
     {
-        middlegameTables[0][i] = pawnTable[Engine::Helpers::flip(i)];
-        middlegameTables[1][i] = knightTable[Engine::Helpers::flip(i)];
-        middlegameTables[2][i] = bishopTable[Engine::Helpers::flip(i)];
-        middlegameTables[3][i] = rookTable[Engine::Helpers::flip(i)];
-        middlegameTables[4][i] = queenTable[Engine::Helpers::flip(i)];
+        middlegameTables[0][i] = pawnTable[Engine::Helpers::flip(i)] + pieces[0];
+        middlegameTables[1][i] = knightTable[Engine::Helpers::flip(i)] + pieces[1];
+        middlegameTables[2][i] = bishopTable[Engine::Helpers::flip(i)] + pieces[2];
+        middlegameTables[3][i] = rookTable[Engine::Helpers::flip(i)] + pieces[3];
+        middlegameTables[4][i] = queenTable[Engine::Helpers::flip(i)] + pieces[4];
         middlegameTables[5][i] = kingTable[Engine::Helpers::flip(i)];
-        endgameTables[0][i] = endgamePawnTable[Engine::Helpers::flip(i)];
-        endgameTables[1][i] = endgameKnightTable[Engine::Helpers::flip(i)];
-        endgameTables[2][i] = endgameBishopTable[Engine::Helpers::flip(i)];
-        endgameTables[3][i] = endgameRookTable[Engine::Helpers::flip(i)];
-        endgameTables[4][i] = endgameQueenTable[Engine::Helpers::flip(i)];
+        endgameTables[0][i] = endgamePawnTable[Engine::Helpers::flip(i)] + endgamePieces[0];
+        endgameTables[1][i] = endgameKnightTable[Engine::Helpers::flip(i)] + endgamePieces[1];
+        endgameTables[2][i] = endgameBishopTable[Engine::Helpers::flip(i)] + endgamePieces[2];
+        endgameTables[3][i] = endgameRookTable[Engine::Helpers::flip(i)] + endgamePieces[3];
+        endgameTables[4][i] = endgameQueenTable[Engine::Helpers::flip(i)] + endgamePieces[4];
         endgameTables[5][i] = endgameKingTable[Engine::Helpers::flip(i)];
     }
 }

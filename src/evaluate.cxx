@@ -14,7 +14,7 @@ namespace Engine::Evaluate
 {
     PieceSquareTable pieceSquareTable;
 
-    int32_t heuristic(const Board& board, const int& distanceToMaxDepth, GameOverResult gameover, const Settings& settings)
+    int32_t heuristic(const Board& board, const int ply, GameOverResult gameover, const Settings& settings)
     {
         if ((++count & 1023) == 0)
         {
@@ -25,14 +25,13 @@ namespace Engine::Evaluate
         if (gameover == DRAW)
             return 0;
         else if (gameover == WHITEWON)
-           return settings.get_best_eval() - distanceToMaxDepth;
+           return settings.get_best_eval() - ply;
         else if (gameover == BLACKWON)
-            return settings.get_worst_eval() + distanceToMaxDepth;
+            return settings.get_worst_eval() + ply;
 
         return calculateMaterial(board);
     }
 
-    static const int pieceValues[] = { 100, 300, 300, 500, 900, 0 };
     static const int gamePhase[] = { 0, 1, 1, 2, 4, 0 };
 
     int32_t calculateMaterial(const Board& board)
@@ -47,10 +46,8 @@ namespace Engine::Evaluate
         for (Square i = 0; i < max_square; i++) {
             const auto piece = board.at(i);
             if (piece != Piece::NONE) {
-                mg[static_cast<int>(piece.color())] += pieceValues[static_cast<int>(piece.type())]
-                    + pieceSquareTable.get_value_middlegame(piece.color(), piece.type(), i.index());
-                eg[static_cast<int>(piece.color())] += pieceValues[static_cast<int>(piece.type())]
-                    + pieceSquareTable.get_value_endgame(piece.color(), piece.type(), i.index());
+                mg[static_cast<int>(piece.color())] += pieceSquareTable.get_value_middlegame(piece.color(), piece.type(), i.index());
+                eg[static_cast<int>(piece.color())] += pieceSquareTable.get_value_endgame(piece.color(), piece.type(), i.index());
                 phase += gamePhase[static_cast<int>(piece.type())];
             }
         }
