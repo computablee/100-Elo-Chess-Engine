@@ -33,7 +33,7 @@ namespace Engine::Search
             for (auto depth = 1; depth < 256; depth++)
             {
                 auto bestMoveSequence = search(board, settings.get_worst_eval(), settings.get_best_eval(), depth, 0, board.sideToMove() == Color::WHITE ? 1 : -1,
-                    settings, bestSequence, true, true);
+                    settings, bestSequence, true, true, 0);
                 auto score = bestMoveSequence.get_evaluation();
                 auto sequence = std::move(bestMoveSequence).get_sequence();
                 bestMove = sequence.front();
@@ -50,8 +50,8 @@ namespace Engine::Search
         return bestMove;
     }
 
-    Sequence search(Board& board, int32_t alpha, int32_t beta, const uint8_t depth, const uint8_t ply, const int8_t color, const Settings& settings,
-            const std::vector<chess::Move>& PVs, const bool PV, const bool canNMP)
+    Sequence search(Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, const int8_t color, const Settings& settings,
+            const std::vector<chess::Move>& PVs, const bool PV, const bool canNMP, uint8_t addedDepth)
     {
         maxPly = std::max(ply, maxPly);
 
@@ -59,7 +59,7 @@ namespace Engine::Search
         if (depth >= 3 && !board.inCheck() && !PV && canNMP)
         {
             board.makeNullMove();
-            auto sequence = search(board, -beta, -beta + 1, depth - 3, ply + 1, -color, settings, PVs, false, false);
+            auto sequence = search(board, -beta, -beta + 1, depth - 3, ply + 1, -color, settings, PVs, false, false, addedDepth);
             auto value = -sequence.get_evaluation();
             board.unmakeNullMove();
 
@@ -67,10 +67,15 @@ namespace Engine::Search
                 return value;
         }
 
+        // Search extension
+        if (board.inCheck() && addedDepth < 3)
+        {
+            depth++;
+            addedDepth++;
+        }
+
         auto alphaOrig = alpha;
-
         auto ttentry = table.get_entry(board);
-
         Move previousBestMove;
 
         // TT
@@ -112,7 +117,7 @@ namespace Engine::Search
             const auto isPV = PV && ply < PVs.size() && PVs[ply] == move;
 
             board.makeMove(move);
-            auto sequence = search(board, -beta, -alpha, depth - 1, ply + 1, -color, settings, PVs, isPV, true);
+            auto sequence = search(board, -beta, -alpha, depth - 1, ply + 1, -color, settings, PVs, isPV, true, addedDepth);
             auto value = -sequence.get_evaluation();
 
             if (value > bestSequence.get_evaluation())
@@ -167,7 +172,7 @@ namespace Engine::Search
 
         for (const auto& move : moves)
         {
-            if (!board.isCapture(move))
+            if (!board.isCapture(move) && !board.inCheck())
                 break;
 
             board.makeMove(move);
