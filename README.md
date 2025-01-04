@@ -16,7 +16,7 @@ make -j8
 
 # Current Elo Estimates
 
-Currently, the 100 Elo Chess Engine is using the Stash project and cutechess to get a rough idea of Elo.
+Currently, the 100 Elo Chess Engine is using the [Stash engine](https://gitlab.com/mhouppin/stash-bot) and [cutechess](https://cutechess.com/) to get a rough idea of Elo.
 We have compared to:
 
 - v9 (1275 Elo)
