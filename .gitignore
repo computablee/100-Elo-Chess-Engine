@@ -4,6 +4,9 @@ build/*
 # Stash benchmarks
 stash-*
 
+# Executables
+100Elo*
+
 # Prerequisites
 *.d
 
