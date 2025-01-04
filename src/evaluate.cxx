@@ -42,6 +42,23 @@ namespace Engine::Evaluate
         int32_t eg[2] = { 0 };
         int phase = 0;
 
+        /*for (int32_t color = 0; color < 2; color++)
+        {
+            for (int32_t piece = 0; piece < 5; piece++)
+            {
+                auto bb = board.pieces(static_cast<PieceType::underlying>(piece), static_cast<Color::underlying>(color)).getBits();
+
+                while (bb)
+                {
+                    const int lsb = __builtin_ctzll(bb);
+                    mg[color] += pieceSquareTable.get_value_middlegame(color, piece, lsb);
+                    eg[color] += pieceSquareTable.get_value_endgame(color, piece, lsb);
+                    phase += gamePhase[piece];
+                    bb &= bb - 1;
+                }
+            }
+        }*/
+
         for (uint32_t i = 0; i < 64; i++) {
             const auto piece = board.at(i);
             if (piece != Piece::NONE) {
@@ -51,8 +68,8 @@ namespace Engine::Evaluate
             }
         }
 
-        int32_t mgScore = mg[0] - mg[1];
-        int32_t egScore = eg[0] - eg[1];
+        const int32_t mgScore = mg[0] - mg[1];
+        const int32_t egScore = eg[0] - eg[1];
         if (phase > 24) phase = 24;
         int egPhase = 24 - phase;
 
