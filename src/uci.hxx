@@ -14,4 +14,6 @@ namespace Engine::UCI
     uint32_t parseEach(chess::Board& board);
 
     void announceMove(chess::Move& move);
+
+    void announceInfo(const std::vector<chess::Move>& pv, const int32_t depth, const int32_t score, const uint32_t nodes);
 }

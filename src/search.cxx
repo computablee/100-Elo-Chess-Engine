@@ -1,6 +1,7 @@
 #include "search.hxx"
 #include "tt.hxx"
 #include "evaluate.hxx"
+#include "uci.hxx"
 
 using namespace chess;
 using namespace Engine::TranspositionTable;
@@ -28,23 +29,17 @@ namespace Engine::Search
 
         try
         {
+            // Iterative deepening
             for (auto depth = 1; depth < 256; depth++)
             {
-                //#define DEBUG
-                #ifdef DEBUG
-                std::cout << "thinking for " << milliseconds_to_think << " milliseconds... depth = " << depth << std::endl;
-                #endif
-
                 auto bestMoveSequence = search(board, settings.get_worst_eval(), settings.get_best_eval(), depth, 0, board.sideToMove() == Color::WHITE ? 1 : -1,
                     settings, bestSequence, true, true);
+                auto score = bestMoveSequence.get_evaluation();
                 auto sequence = std::move(bestMoveSequence).get_sequence();
                 bestMove = sequence.front();
                 bestSequence = std::vector<Move> { sequence.begin(), sequence.end() };
-                //bestMove = bestMoveSequence.get_first_move();
 
-                #ifdef DEBUG
-                std::cout << "best move so far: " << uci::moveToUci(bestMove) << std::endl;
-                #endif
+                UCI::announceInfo(bestSequence, depth, score, count);
             }
         }
         catch (const TimeOut& e)
@@ -60,6 +55,7 @@ namespace Engine::Search
     {
         maxPly = std::max(ply, maxPly);
 
+        // NMP
         if (depth >= 3 && !board.inCheck() && !PV && canNMP)
         {
             board.makeNullMove();
@@ -77,6 +73,7 @@ namespace Engine::Search
 
         Move previousBestMove;
 
+        // TT
         if (ttentry.hash == board.hash())
         {
             if (ttentry.depth >= depth)
@@ -98,12 +95,14 @@ namespace Engine::Search
         Movelist moves;
         movegen::legalmoves(moves, board);
 
+        // QS
         if (depth == 0)
             return Sequence(quiescence(board, alpha, beta, depth, ply + 1, color, settings));
         
         if (auto gameover = isGameOver(board, moves))
             return Sequence(heuristic(board, ply, gameover, settings) * color);
 
+        // MVV-LVA
         orderMoves(moves, board, previousBestMove);
 
         Sequence bestSequence(settings.get_worst_eval());
@@ -115,10 +114,13 @@ namespace Engine::Search
             board.makeMove(move);
             auto sequence = search(board, -beta, -alpha, depth - 1, ply + 1, -color, settings, PVs, isPV, true);
             auto value = -sequence.get_evaluation();
+
             if (value > bestSequence.get_evaluation())
                 bestSequence = Sequence(value, move, std::move(sequence));
+
             board.unmakeMove(move);
 
+            // Alpha-beta pruning
             if (value > alpha)
                 alpha = value;
 
@@ -126,6 +128,7 @@ namespace Engine::Search
                 break;
         }
 
+        // TT
         if (ttentry.hash != board.hash() || depth > ttentry.depth)
         {
             ttentry.value = bestSequence.get_evaluation();

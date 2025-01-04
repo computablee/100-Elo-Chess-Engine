@@ -123,4 +123,11 @@ namespace Engine::UCI
     {
         std::cout << "bestmove " << uci::moveToUci(move) << std::endl;
     }
+
+    void announceInfo(const std::vector<chess::Move>& pv, const int32_t depth, const int32_t score, const uint32_t nodes)
+    {
+        std::cout << "info depth " << depth << " score cp " << score << " nodes " << nodes << " pv ";
+        for (const auto& move : pv) std::cout << uci::moveToUci(move) << " ";
+        std::cout << std::endl;
+    }
 }
