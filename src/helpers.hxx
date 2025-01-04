@@ -13,7 +13,7 @@ namespace Engine::Helpers
 
     void orderMoves(chess::Movelist& moves, const chess::Board& board, const chess::Move& bestMove);
 
-    constexpr inline int flip(const int x) { return (x ^ 56) & 0xFF; }
+    constexpr inline int32_t flip(const int32_t x) { return (x ^ 56) & 0xFF; }
 
-    inline uint32_t reduce(const uint32_t x, const uint32_t N) { return ((uint64_t)x * (uint64_t)N) >> 32; }
+    constexpr inline uint32_t reduce(const uint32_t x, const uint32_t N) { return ((uint64_t)x * (uint64_t)N) >> 32; }
 }

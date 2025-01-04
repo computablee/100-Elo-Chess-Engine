@@ -14,16 +14,16 @@ namespace Engine::PST
     public:
         PieceSquareTable();
 
-        inline int32_t get_value_middlegame(chess::Color color, chess::PieceType pieceType, uint8_t square)
+        constexpr inline __attribute__((always_inline)) int32_t get_value_middlegame(int32_t color, int32_t pieceType, uint8_t square)
         {
-            if (color == chess::Color::BLACK) square = Engine::Helpers::flip(square);
-            return middlegameTables[static_cast<int>(pieceType)][square];
+            if (color) square = Engine::Helpers::flip(square);
+            return middlegameTables[pieceType][square];
         }
 
-        inline int32_t get_value_endgame(chess::Color color, chess::PieceType pieceType, uint8_t square)
+        constexpr inline __attribute__((always_inline)) int32_t get_value_endgame(int32_t color, int32_t pieceType, uint8_t square)
         {
-            if (color == chess::Color::BLACK) square = Engine::Helpers::flip(square);
-            return endgameTables[static_cast<int>(pieceType)][square];
+            if (color) square = Engine::Helpers::flip(square);
+            return endgameTables[pieceType][square];
         }
     };
 }
