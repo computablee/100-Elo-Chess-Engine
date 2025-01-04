@@ -1,5 +1,7 @@
 #include "pst.hxx"
 
+// PeSTO PSTs: https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function
+
 static const int32_t pawnTable[] = {
       0,   0,   0,   0,   0,   0,  0,   0,
      98, 134,  61,  95,  68, 126, 34, -11,

@@ -6,6 +6,8 @@ using namespace chess;
 using namespace Engine::TranspositionTable;
 using namespace Engine::Evaluate;
 
+extern uint32_t milliseconds_to_think;
+
 namespace Engine::Search
 {   
     Table table(1 << 28);
@@ -28,6 +30,7 @@ namespace Engine::Search
         {
             for (auto depth = 1; depth < 256; depth++)
             {
+                //#define DEBUG
                 #ifdef DEBUG
                 std::cout << "thinking for " << milliseconds_to_think << " milliseconds... depth = " << depth << std::endl;
                 #endif
@@ -38,6 +41,10 @@ namespace Engine::Search
                 bestMove = sequence.front();
                 bestSequence = std::vector<Move> { sequence.begin(), sequence.end() };
                 //bestMove = bestMoveSequence.get_first_move();
+
+                #ifdef DEBUG
+                std::cout << "best move so far: " << uci::moveToUci(bestMove) << std::endl;
+                #endif
             }
         }
         catch (const TimeOut& e)
