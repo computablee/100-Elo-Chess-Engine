@@ -14,6 +14,6 @@ add_executable(${PROJECT_NAME}
     src/search.cxx
     src/evaluate.cxx)
 
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -O3 -march=native)
+target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -O3 -march=native -g)
 
 target_include_directories(${PROJECT_NAME} PRIVATE src/${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/chess-library/include)
