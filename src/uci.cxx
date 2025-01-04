@@ -26,9 +26,9 @@ namespace Engine::UCI
         stream >> binc;
 
         if (board.sideToMove() == Color::WHITE)
-            return wtime / 20 + winc / 2;
+            return wtime / 20 + winc / 2 - 10;
         else
-            return btime / 20 + binc / 2;
+            return btime / 20 + binc / 2 - 10;
     }
 
     void parsePosition(Board& board, const std::string& line)
