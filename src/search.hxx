@@ -13,7 +13,7 @@ using namespace Engine::Helpers;
 namespace Engine::Search
 {
     inline int32_t count = 0;
-    inline int32_t maxPly = 0;
+    inline uint8_t maxPly = 0;
 
     class TimeOut : std::exception { };
 
@@ -49,9 +49,10 @@ namespace Engine::Search
 
     inline std::chrono::steady_clock::time_point begin;
 
-    Sequence search(chess::Board& board, int32_t alpha, int32_t beta, const int depth, const int ply, const int color, const Settings& settings);
+    Sequence search(chess::Board& board, int32_t alpha, int32_t beta, const uint8_t depth, const uint8_t ply, const int8_t color, const Settings& settings,
+        const std::vector<chess::Move>& PVs, const bool PV, const bool canNMP);
 
     chess::Move iterativeDeepening(chess::Board& board, const Settings& settings);
 
-    int32_t quiescence(chess::Board& board, int32_t alpha, int32_t beta, const int depth, const int ply, const int color, const Settings& settings);
+    int32_t quiescence(chess::Board& board, int32_t alpha, int32_t beta, const uint8_t depth, const uint8_t ply, const int8_t color, const Settings& settings);
 }

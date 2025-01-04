@@ -22,17 +22,22 @@ namespace Engine::Search
         movegen::legalmoves(moves, board);
 
         Move bestMove = moves[0];
+        std::vector<Move> bestSequence;
 
         try
         {
-            for (auto depth = 1; ; depth++)
+            for (auto depth = 1; depth < 256; depth++)
             {
                 #ifdef DEBUG
                 std::cout << "thinking for " << milliseconds_to_think << " milliseconds... depth = " << depth << std::endl;
                 #endif
 
-                auto bestMoveSequence = search(board, settings.get_worst_eval(), settings.get_best_eval(), depth, 1, board.sideToMove() == Color::WHITE ? 1 : -1, settings);
-                bestMove = bestMoveSequence.get_first_move();
+                auto bestMoveSequence = search(board, settings.get_worst_eval(), settings.get_best_eval(), depth, 0, board.sideToMove() == Color::WHITE ? 1 : -1,
+                    settings, bestSequence, true, true);
+                auto sequence = std::move(bestMoveSequence).get_sequence();
+                bestMove = sequence.front();
+                bestSequence = std::vector<Move> { sequence.begin(), sequence.end() };
+                //bestMove = bestMoveSequence.get_first_move();
             }
         }
         catch (const TimeOut& e)
@@ -43,21 +48,21 @@ namespace Engine::Search
         return bestMove;
     }
 
-    Sequence search(Board& board, int32_t alpha, int32_t beta, const int depth, const int ply, const int color, const Settings& settings)
+    Sequence search(Board& board, int32_t alpha, int32_t beta, const uint8_t depth, const uint8_t ply, const int8_t color, const Settings& settings,
+            const std::vector<chess::Move>& PVs, const bool PV, const bool canNMP)
     {
         maxPly = std::max(ply, maxPly);
 
-#ifdef NMP
-        if (depth >= 3 && !board.inCheck())
+        if (depth >= 3 && !board.inCheck() && !PV && canNMP)
         {
             board.makeNullMove();
-            int score = -negamax(board, depth - 3, -beta, -beta + 1, -color, maxDepth);
+            auto sequence = search(board, -beta, -beta + 1, depth - 3, ply + 1, -color, settings, PVs, false, false);
+            auto value = -sequence.get_evaluation();
             board.unmakeNullMove();
 
-            if (score >= beta)
-                return score;
+            if (value >= beta)
+                return value;
         }
-#endif
 
         auto alphaOrig = alpha;
 
@@ -98,8 +103,10 @@ namespace Engine::Search
 
         for (const auto& move : moves)
         {
+            const auto isPV = PV && ply < PVs.size() && PVs[ply] == move;
+
             board.makeMove(move);
-            auto sequence = search(board, -beta, -alpha, depth - 1, ply + 1, -color, settings);
+            auto sequence = search(board, -beta, -alpha, depth - 1, ply + 1, -color, settings, PVs, isPV, true);
             auto value = -sequence.get_evaluation();
             if (value > bestSequence.get_evaluation())
                 bestSequence = Sequence(value, move, std::move(sequence));
@@ -132,7 +139,7 @@ namespace Engine::Search
         return bestSequence;
     }
 
-    int32_t quiescence(Board& board, int32_t alpha, int32_t beta, const int depth, const int ply, const int color, const Settings& settings)
+    int32_t quiescence(Board& board, int32_t alpha, int32_t beta, const uint8_t depth, const uint8_t ply, const int8_t color, const Settings& settings)
     {
         maxPly = std::max(ply, maxPly);
 
