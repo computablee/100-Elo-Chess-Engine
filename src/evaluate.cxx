@@ -42,7 +42,7 @@ namespace Engine::Evaluate
         int32_t eg[2] = { 0 };
         int phase = 0;
 
-        /*for (int32_t color = 0; color < 2; color++)
+        for (int32_t color = 0; color < 2; color++)
         {
             for (int32_t piece = 0; piece < 5; piece++)
             {
@@ -56,15 +56,6 @@ namespace Engine::Evaluate
                     phase += gamePhase[piece];
                     bb &= bb - 1;
                 }
-            }
-        }*/
-
-        for (uint32_t i = 0; i < 64; i++) {
-            const auto piece = board.at(i);
-            if (piece != Piece::NONE) {
-                mg[static_cast<int>(piece.color())] += pieceSquareTable.get_value_middlegame(piece.color(), piece.type(), i);
-                eg[static_cast<int>(piece.color())] += pieceSquareTable.get_value_endgame(piece.color(), piece.type(), i);
-                phase += gamePhase[static_cast<int>(piece.type())];
             }
         }
 
