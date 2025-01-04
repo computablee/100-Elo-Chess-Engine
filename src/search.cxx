@@ -76,7 +76,7 @@ namespace Engine::Search
 
         auto alphaOrig = alpha;
         auto ttentry = table.get_entry(board);
-        Move previousBestMove;
+        Move previousBestMove = 0;
 
         // TT
         if (ttentry.hash == board.hash())
