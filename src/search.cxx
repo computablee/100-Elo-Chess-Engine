@@ -131,6 +131,7 @@ namespace Engine::Search
 
             if (alpha >= beta)
             {
+                // Killer moves
                 if (!board.isCapture(move))
                 {
                     killerMoves[depth][1] = killerMoves[depth][0];
