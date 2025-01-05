@@ -29,12 +29,12 @@ namespace Engine::Helpers
     {
         for (auto& move : moves)
         {
-            if (move == killerMove[0])
-                move.setScore(9000);
-            else if (move == killerMove[1])
-                move.setScore(8000);
-            else if (board.isCapture(move))
+            if (board.isCapture(move))
                 move.setScore((board.at(move.to()).type() * 1000 - board.at(move.from()).type() * 100));
+            else if (move == killerMove[0])
+                move.setScore(-7000);
+            else if (move == killerMove[1])
+                move.setScore(-8000);
             else
                 move.setScore(-9000);
         }
@@ -56,12 +56,12 @@ namespace Engine::Helpers
         {
             if (move == bestMove)
                 move.setScore(10000);
-            else if (move == killerMove[0])
-                move.setScore(9000);
-            else if (move == killerMove[1])
-                move.setScore(8000);
             else if (board.isCapture(move))
                 move.setScore((board.at(move.to()).type() * 1000 - board.at(move.from()).type() * 100));
+            else if (move == killerMove[0])
+                move.setScore(-7000);
+            else if (move == killerMove[1])
+                move.setScore(-8000);
             else
                 move.setScore(-9000);
         }
