@@ -9,9 +9,9 @@ namespace Engine::Helpers
 
     GameOverResult isGameOver(const chess::Board& board, const chess::Movelist& moves);
 
-    void orderMoves(chess::Movelist& moves, const chess::Board& board);
+    void orderMoves(chess::Movelist& moves, const chess::Board& board, const chess::Move killerMove[2]);
 
-    void orderMoves(chess::Movelist& moves, const chess::Board& board, const chess::Move& bestMove);
+    void orderMoves(chess::Movelist& moves, const chess::Board& board, const chess::Move killerMove[2], const chess::Move& bestMove);
 
     constexpr inline int32_t flip(const int32_t x) { return (x ^ 56) & 0xFF; }
 

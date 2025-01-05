@@ -25,47 +25,55 @@ namespace Engine::Helpers
         return ONGOING;
     }
 
-    void orderMoves(Movelist& moves, const Board& board)
+    void orderMoves(Movelist& moves, const Board& board, const Move killerMove[2])
     {
-        std::sort(moves.begin(), moves.end(), [&board](const Move& a, const Move& b) {
-            if (board.isCapture(a) && !board.isCapture(b))
-                return true;
-            else if (!board.isCapture(a) && board.isCapture(b))
-                return false;
-            else if (board.isCapture(a) && board.isCapture(b))
-            {
-                if (board.at(a.to()) > board.at(b.to()))
-                    return true;
-                else if (board.at(a.to()) < board.at(b.to()))
-                    return false;
-                else
-                    return board.at(a.from()) < board.at(b.from());
-            }
-            else return a.from() < b.from();
+        for (auto& move : moves)
+        {
+            if (move == killerMove[0])
+                move.setScore(9000);
+            else if (move == killerMove[1])
+                move.setScore(8000);
+            else if (board.isCapture(move))
+                move.setScore((board.at(move.to()).type() * 1000 - board.at(move.from()).type() * 100));
+            else
+                move.setScore(-9000);
+        }
+
+        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) {
+            const auto score_a = a.score();
+            const auto score_b = b.score();
+
+            if (score_a == score_b)
+                return a.from() > b.from();
+            else
+                return score_a > score_b;
         });
     }
 
-    void orderMoves(Movelist& moves, const Board& board, const Move& bestMove)
+    void orderMoves(Movelist& moves, const Board& board, const Move killerMove[2], const Move& bestMove)
     {
-        std::sort(moves.begin(), moves.end(), [&board, &bestMove](const Move& a, const Move& b) {
-            if (a == bestMove)
-                return true;
-            else if (b == bestMove)
-                return false;
-            else if (board.isCapture(a) && !board.isCapture(b))
-                return true;
-            else if (!board.isCapture(a) && board.isCapture(b))
-                return false;
-            else if (board.isCapture(a) && board.isCapture(b))
-            {
-                if (board.at(a.to()) > board.at(b.to()))
-                    return true;
-                else if (board.at(a.to()) < board.at(b.to()))
-                    return false;
-                else
-                    return board.at(a.from()) < board.at(b.from());
-            }
-            else return a.from() < b.from();
+        for (auto& move : moves)
+        {
+            if (move == bestMove)
+                move.setScore(10000);
+            else if (move == killerMove[0])
+                move.setScore(9000);
+            else if (move == killerMove[1])
+                move.setScore(8000);
+            else if (board.isCapture(move))
+                move.setScore((board.at(move.to()).type() * 1000 - board.at(move.from()).type() * 100));
+            else
+                move.setScore(-9000);
+        }
+
+        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) {
+            const auto score_a = a.score();
+            const auto score_b = b.score();
+
+            if (score_a == score_b)
+                return a.from() > b.from();
+            else
+                return score_a > score_b;
         });
     }
 }

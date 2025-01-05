@@ -12,6 +12,7 @@ extern uint32_t milliseconds_to_think;
 namespace Engine::Search
 {   
     Table table(1 << 28);
+    Move killerMoves[256][2];
 
     Move iterativeDeepening(Board& board, const Settings& settings)
     {
@@ -55,18 +56,6 @@ namespace Engine::Search
     {
         maxPly = std::max(ply, maxPly);
 
-        // NMP
-        if (depth >= 3 && !board.inCheck() && !PV && canNMP)
-        {
-            board.makeNullMove();
-            auto sequence = search(board, -beta, -beta + 1, depth - 3, ply + 1, -color, settings, PVs, false, false, addedDepth);
-            auto value = -sequence.get_evaluation();
-            board.unmakeNullMove();
-
-            if (value >= beta)
-                return value;
-        }
-
         // Search extension
         if (board.inCheck() && addedDepth < 3)
         {
@@ -74,11 +63,10 @@ namespace Engine::Search
             addedDepth++;
         }
 
-        auto alphaOrig = alpha;
-        auto ttentry = table.get_entry(board);
-        Move previousBestMove = 0;
-
         // TT
+        auto ttentry = table.get_entry(board);
+        auto alphaOrig = alpha;
+        Move previousBestMove = 0;
         if (ttentry.hash == board.hash())
         {
             if (ttentry.depth >= depth)
@@ -97,18 +85,30 @@ namespace Engine::Search
             previousBestMove = ttentry.bestMove;
         }
 
-        Movelist moves;
-        movegen::legalmoves(moves, board);
+        // NMP
+        if (depth >= 3 && !board.inCheck() && !PV && canNMP)
+        {
+            board.makeNullMove();
+            auto sequence = search(board, -beta, -beta + 1, depth - 3, ply + 1, -color, settings, PVs, false, false, addedDepth);
+            auto value = -sequence.get_evaluation();
+            board.unmakeNullMove();
+
+            if (value >= beta)
+                return value;
+        }
 
         // QS
         if (depth == 0)
             return Sequence(quiescence(board, alpha, beta, depth, ply + 1, color, settings));
+
+        Movelist moves;
+        movegen::legalmoves(moves, board);
         
         if (auto gameover = isGameOver(board, moves))
             return Sequence(heuristic(board, ply, gameover, settings) * color);
 
         // MVV-LVA
-        orderMoves(moves, board, previousBestMove);
+        orderMoves(moves, board, killerMoves[depth], previousBestMove);
 
         Sequence bestSequence(settings.get_worst_eval());
 
@@ -130,7 +130,14 @@ namespace Engine::Search
                 alpha = value;
 
             if (alpha >= beta)
+            {
+                if (!board.isCapture(move))
+                {
+                    killerMoves[depth][1] = killerMoves[depth][0];
+                    killerMoves[depth][0] = move;
+                }
                 break;
+            }
         }
 
         // TT
@@ -168,7 +175,7 @@ namespace Engine::Search
         else if (value > alpha)
             alpha = value;
 
-        orderMoves(moves, board);
+        orderMoves(moves, board, killerMoves[depth]);
 
         for (const auto& move : moves)
         {
