@@ -24,17 +24,17 @@ We have compared to:
 - v12 (1886 Elo)
 - v13 (1972 Elo)
 
-Latest run was done against `v12` with a time control of `10+0.1` (in seconds) with `250` total runs.
+Latest run was done against `v12` with a time control of `120+1` (in seconds) with `1000` total runs.
 
 Results may be outdated.
 I run these occasionally; the engine may be stronger than the results shown.
 
 ```
-Score of 100 Elo Chess Engine vs Stash v12.0: 73 - 90 - 87  [0.466] 250
-Elo difference: -23.5 +/- 34.8, LOS: 9.3 %, DrawRatio: 34.5 %
+Score of 100 Elo Chess Engine vs Stash v12.0: 417 - 234 - 349  [0.592] 1000
+Elo difference: 64.3 +/- 17.5, LOS: 100.0 %, DrawRatio: 34.9 %
 ```
 
-This results in an estimated Elo of: `1863`.
+This results in an estimated Elo of: `1950`.
 
 # Current Features
 
