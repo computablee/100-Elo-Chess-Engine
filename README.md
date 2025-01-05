@@ -48,3 +48,4 @@ The 100 Elo Chess Engine uses the following architecture:
 - Move ordering (best move, then MVV-LVA for captures)
 - Quiescent search
 - Killer moves
+- Late move reduction

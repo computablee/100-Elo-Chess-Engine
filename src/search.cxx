@@ -86,7 +86,9 @@ namespace Engine::Search
         }
 
         // NMP
-        if (depth >= 3 && !board.inCheck() && !PV && canNMP)
+        if (depth >= 3 &&
+            !board.inCheck() &&
+            !PV && canNMP)
         {
             board.makeNullMove();
             auto sequence = search(board, -beta, -beta + 1, depth - 3, ply + 1, -color, settings, PVs, false, false, addedDepth);
@@ -111,14 +113,35 @@ namespace Engine::Search
         orderMoves(moves, board, killerMoves[depth], previousBestMove);
 
         Sequence bestSequence(settings.get_worst_eval());
+        int movesSearched = 0;
 
         for (const auto& move : moves)
         {
             const auto isPV = PV && ply < PVs.size() && PVs[ply] == move;
 
             board.makeMove(move);
-            auto sequence = search(board, -beta, -alpha, depth - 1, ply + 1, -color, settings, PVs, isPV, true, addedDepth);
-            auto value = -sequence.get_evaluation();
+            Sequence sequence;
+            int32_t value;
+
+            // LMR
+            if (movesSearched >= 4 &&
+                depth >= 3 &&
+                move.score() == -9000) // score assigned for non-captures, non-killer moves, non best moves
+            {
+                sequence = search(board, -alpha - 1, -alpha, depth - 2, ply + 1, -color, settings, PVs, isPV, true, addedDepth);
+                value = -sequence.get_evaluation();
+            }
+            else
+            {
+                value = alpha + 1;
+            }
+
+            // Main search
+            if (value > alpha)
+            {
+                sequence = search(board, -beta, -alpha, depth - 1, ply + 1, -color, settings, PVs, isPV, true, addedDepth);
+                value = -sequence.get_evaluation();
+            }
 
             if (value > bestSequence.get_evaluation())
                 bestSequence = Sequence(value, move, std::move(sequence));
@@ -139,6 +162,8 @@ namespace Engine::Search
                 }
                 break;
             }
+
+            movesSearched++;
         }
 
         // TT
