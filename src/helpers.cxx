@@ -25,6 +25,27 @@ namespace Engine::Helpers
         return ONGOING;
     }
 
+    void orderMoves(Movelist& moves, const Board& board)
+    {
+        for (auto& move : moves)
+        {
+            if (board.isCapture(move))
+                move.setScore((board.at(move.to()).type() * 1000 - board.at(move.from()).type() * 100));
+            else
+                move.setScore(-9000);
+        }
+
+        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) {
+            const auto score_a = a.score();
+            const auto score_b = b.score();
+
+            if (score_a == score_b)
+                return a.from() > b.from();
+            else
+                return score_a > score_b;
+        });
+    }
+
     void orderMoves(Movelist& moves, const Board& board, const Move killerMove[2])
     {
         for (auto& move : moves)

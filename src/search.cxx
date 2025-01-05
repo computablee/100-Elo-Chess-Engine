@@ -101,7 +101,7 @@ namespace Engine::Search
 
         // QS
         if (depth == 0)
-            return Sequence(quiescence(board, alpha, beta, depth, ply + 1, color, settings));
+            return Sequence(quiescence(board, alpha, beta, ply + 1, color, settings));
 
         Movelist moves;
         movegen::legalmoves(moves, board);
@@ -187,7 +187,7 @@ namespace Engine::Search
         return bestSequence;
     }
 
-    int32_t quiescence(Board& board, int32_t alpha, int32_t beta, const uint8_t depth, const uint8_t ply, const int8_t color, const Settings& settings)
+    int32_t quiescence(Board& board, int32_t alpha, int32_t beta, const uint8_t ply, const int8_t color, const Settings& settings)
     {
         maxPly = std::max(ply, maxPly);
 
@@ -201,7 +201,7 @@ namespace Engine::Search
         else if (value > alpha)
             alpha = value;
 
-        orderMoves(moves, board, killerMoves[depth]);
+        orderMoves(moves, board);
 
         for (const auto& move : moves)
         {
@@ -209,7 +209,7 @@ namespace Engine::Search
                 break;
 
             board.makeMove(move);
-            value = -quiescence(board, -beta, -alpha, depth - 1, ply + 1, -color, settings);
+            value = -quiescence(board, -beta, -alpha, ply + 1, -color, settings);
             board.unmakeMove(move);
 
             if (value >= beta)

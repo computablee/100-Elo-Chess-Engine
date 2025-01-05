@@ -54,5 +54,5 @@ namespace Engine::Search
 
     chess::Move iterativeDeepening(chess::Board& board, const Settings& settings);
 
-    int32_t quiescence(chess::Board& board, int32_t alpha, int32_t beta, const uint8_t depth, const uint8_t ply, const int8_t color, const Settings& settings);
+    int32_t quiescence(chess::Board& board, int32_t alpha, int32_t beta, const uint8_t ply, const int8_t color, const Settings& settings);
 }
