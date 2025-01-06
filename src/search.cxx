@@ -114,7 +114,7 @@ namespace Engine::Search
 
         // QS
         if (depth == 0)
-            return quiescence(board, alpha, beta, ply + 1);
+            return quiescence(board, alpha, beta, ply);
 
         Movelist moves;
         movegen::legalmoves(moves, board);
