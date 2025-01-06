@@ -144,6 +144,7 @@ namespace Engine::Search
             {
                 uint8_t additionalDepthReduction = 0;
 
+                // LMR
                 if (depth >= 3)
                 {
                     if (movesSearched < 6)
