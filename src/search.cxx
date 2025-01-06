@@ -3,6 +3,7 @@
 #include "evaluate.hxx"
 #include "uci.hxx"
 #include <cstring>
+#include <cmath>
 
 using namespace chess;
 using namespace Engine::TranspositionTable;
@@ -49,7 +50,7 @@ namespace Engine::Search
                 auto score = search<NodeType::PV>(board, WORST_EVAL, BEST_EVAL, depth, 0, 0, PV);
                 bestMove = PV[0];
 
-                UCI::announceInfo(PV, depth, score, count);
+                UCI::announceInfo(PV, depth, maxPly, score, count, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count());
             }
         }
         catch (const TimeOut& e)
@@ -101,18 +102,18 @@ namespace Engine::Search
         }
 
         // NMP
-        /*if (depth >= 3 &&
+        if (depth >= 3 &&
             !board.inCheck() &&
             nodeType == NodeType::NonPV)
         {
+            Move PVdown[256];
             board.makeNullMove();
-            auto sequence = search<NodeType::NonPV>(board, -beta, -beta + 1, depth - 3, ply + 1, settings, PVs, addedDepth);
-            auto value = -sequence.get_evaluation();
+            auto value = -search<NodeType::NonPV>(board, -beta, -beta + 1, depth - 3, ply + 1, addedDepth, PVdown);
             board.unmakeNullMove();
 
             if (value >= beta)
                 return value;
-        }*/
+        }
 
         // QS
         if (depth == 0)
@@ -124,7 +125,7 @@ namespace Engine::Search
         if (auto gameover = isGameOver(board, moves))
             return heuristic(board, ply, gameover);
 
-        // MVV-LVA
+        // Move ordering
         orderMoves(moves, board, killerMoves[depth], previousBestMove);
 
         int32_t bestEval = WORST_EVAL;
@@ -137,19 +138,6 @@ namespace Engine::Search
             int32_t value;
             Move PVdown[256];
 
-            /*// LMR
-            if (movesSearched >= 4 &&
-                depth >= 3 &&
-                move.score() == -9000) // score assigned for non-captures, non-killer moves, non best moves
-            {
-                sequence = search(board, -alpha - 1, -alpha, depth - 2, ply + 1, settings, PVs, isPV, true, addedDepth);
-                value = -sequence.get_evaluation();
-            }
-            else
-            {
-                value = alpha + 1;
-            }*/
-
             // PVS
             if (movesSearched == 0)
             {
@@ -157,38 +145,27 @@ namespace Engine::Search
             }
             else
             {
-                value = -search<NodeType::NonPV>(board, -alpha - 1, -alpha, depth - 1, ply + 1, addedDepth, PVdown);
+                uint8_t additionalDepthReduction = 0;
 
-                if (value > alpha && nodeType == NodeType::PV)
+                if (depth >= 3)
+                {
+                    if (movesSearched < 6)
+                        additionalDepthReduction = 1;
+                    else
+                    {
+                        additionalDepthReduction = depth / 3;
+                        if (nodeType == NodeType::PV || move.score() > -9000 || board.inCheck())
+                            additionalDepthReduction = std::max(additionalDepthReduction * 2 / 3, 1);
+                    }
+                }
+
+                value = -search<NodeType::NonPV>(board, -alpha - 1, -alpha, std::max(depth - 1 - additionalDepthReduction, 0), ply + 1, addedDepth, PVdown);
+
+                if (value > alpha && value < beta)
                 {
                     value = -search<NodeType::PV>(board, -beta, -alpha, depth - 1, ply + 1, addedDepth, PVdown);
                 }
             }
-
-            /*
-            if (movesSearched == 0)
-            {
-                sequence = search<nodeType>(board, -beta, -alpha, depth - 1, ply + 1, settings, PVs, addedDepth);
-                value = -sequence.get_evaluation();
-            }
-            else
-            {
-                sequence = search<NodeType::NonPV>(board, -alpha - 1, -alpha, depth - 1, ply + 1, settings, PVs, addedDepth);
-                value = -sequence.get_evaluation();
-
-                if (value > alpha && nodeType == NodeType::PV)
-                {
-                    sequence = search<NodeType::PV>(board, -beta, -alpha, depth - 1, ply + 1, settings, PVs, addedDepth);
-                    value = -sequence.get_evaluation();
-                }
-            }*/
-
-            /*// Main search
-            if (value > alpha)
-            {
-                sequence = search(board, -beta, -alpha, depth - 1, ply + 1, settings, PVs, isPV, true, addedDepth);
-                value = -sequence.get_evaluation();
-            }*/
 
             if (value > bestEval)
             {

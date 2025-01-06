@@ -15,5 +15,5 @@ namespace Engine::UCI
 
     void announceMove(chess::Move& move);
 
-    void announceInfo(chess::Move PV[256], const int32_t depth, const int32_t score, const uint32_t nodes);
+    void announceInfo(chess::Move PV[256], const int32_t depth, const int32_t selDepth, const int32_t score, const uint32_t nodes, const uint32_t elapsedMilliseconds);
 }

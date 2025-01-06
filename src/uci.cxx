@@ -1,4 +1,5 @@
 #include "uci.hxx"
+#include <chrono>
 
 using namespace chess;
 
@@ -124,9 +125,15 @@ namespace Engine::UCI
         std::cout << "bestmove " << uci::moveToUci(move) << std::endl;
     }
 
-    void announceInfo(chess::Move PV[256], const int32_t depth, const int32_t score, const uint32_t nodes)
+    void announceInfo(chess::Move PV[256], const int32_t depth, const int32_t selDepth, const int32_t score, const uint32_t nodes, const uint32_t elapsedMilliseconds)
     {
-        std::cout << "info depth " << depth << " score cp " << score << " nodes " << nodes << " pv ";
+        std::cout << "info depth " << depth
+                << " seldepth " << selDepth
+                << " score cp " << score
+                << " nodes " << nodes
+                << " nps " << (uint64_t(nodes) * 1000ull / std::max(elapsedMilliseconds, 1u))
+                << " time " << elapsedMilliseconds
+                << " pv ";
         for (int i = 0; i < depth && PV[i] != 0; i++) std::cout << uci::moveToUci(PV[i]) << " ";
         std::cout << std::endl;
     }
