@@ -31,9 +31,9 @@ Results may be outdated.
 I run these occasionally; the engine may be stronger than the results shown.
 
 ```
-Score of 100 Elo Chess Engine (new) vs Stash v14.0.1: 326 - 203 - 471  [0.561] 1000
-...      100 Elo Chess Engine (new) playing White: 172 - 83 - 245  [0.589] 500
-...      100 Elo Chess Engine (new) playing Black: 154 - 120 - 226  [0.534] 500
+Score of 100 Elo Chess Engine vs Stash v14.0.1: 326 - 203 - 471  [0.561] 1000
+...      100 Elo Chess Engine playing White: 172 - 83 - 245  [0.589] 500
+...      100 Elo Chess Engine playing Black: 154 - 120 - 226  [0.534] 500
 ...      White vs Black: 292 - 237 - 471  [0.527] 1000
 Elo difference: 43.0 +/- 15.7, LOS: 100.0 %, DrawRatio: 47.1 %
 ```
