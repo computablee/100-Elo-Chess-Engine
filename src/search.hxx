@@ -47,10 +47,13 @@ namespace Engine::Search
         inline void operator=(Sequence&& sequence) { this->evaluation = sequence.evaluation, this->sequence = std::move(sequence.sequence); }
     };
 
+    enum class NodeType { NonPV, PV };
+
     inline std::chrono::steady_clock::time_point begin;
 
+    template <NodeType nodeType>
     Sequence search(chess::Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, const int8_t color, const Settings& settings,
-        const std::vector<chess::Move>& PVs, const bool PV, const bool canNMP, uint8_t addedDepth);
+        const std::vector<chess::Move>& PVs, uint8_t addedDepth);
 
     chess::Move iterativeDeepening(chess::Board& board, const Settings& settings);
 

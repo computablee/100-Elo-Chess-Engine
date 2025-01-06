@@ -33,8 +33,8 @@ namespace Engine::Search
             // Iterative deepening
             for (auto depth = 1; depth < 256; depth++)
             {
-                auto bestMoveSequence = search(board, settings.get_worst_eval(), settings.get_best_eval(), depth, 0, board.sideToMove() == Color::WHITE ? 1 : -1,
-                    settings, bestSequence, true, true, 0);
+                auto bestMoveSequence = search<NodeType::PV>(board, settings.get_worst_eval(), settings.get_best_eval(), depth, 0, board.sideToMove() == Color::WHITE ? 1 : -1,
+                    settings, bestSequence, 0);
                 auto score = bestMoveSequence.get_evaluation();
                 auto sequence = std::move(bestMoveSequence).get_sequence();
                 bestMove = sequence.front();
@@ -51,8 +51,9 @@ namespace Engine::Search
         return bestMove;
     }
 
+    template <NodeType nodeType>
     Sequence search(Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, const int8_t color, const Settings& settings,
-            const std::vector<chess::Move>& PVs, const bool PV, const bool canNMP, uint8_t addedDepth)
+            const std::vector<chess::Move>& PVs, uint8_t addedDepth)
     {
         maxPly = std::max(ply, maxPly);
 
@@ -86,18 +87,18 @@ namespace Engine::Search
         }
 
         // NMP
-        if (depth >= 3 &&
+        /*if (depth >= 3 &&
             !board.inCheck() &&
-            !PV && canNMP)
+            nodeType == NodeType::NonPV)
         {
             board.makeNullMove();
-            auto sequence = search(board, -beta, -beta + 1, depth - 3, ply + 1, -color, settings, PVs, false, false, addedDepth);
+            auto sequence = search<NodeType::NonPV>(board, -beta, -beta + 1, depth - 3, ply + 1, -color, settings, PVs, addedDepth);
             auto value = -sequence.get_evaluation();
             board.unmakeNullMove();
 
             if (value >= beta)
                 return value;
-        }
+        }*/
 
         // QS
         if (depth == 0)
@@ -117,13 +118,11 @@ namespace Engine::Search
 
         for (const auto& move : moves)
         {
-            const auto isPV = PV && ply < PVs.size() && PVs[ply] == move;
-
             board.makeMove(move);
             Sequence sequence;
             int32_t value;
 
-            // LMR
+            /*// LMR
             if (movesSearched >= 4 &&
                 depth >= 3 &&
                 move.score() == -9000) // score assigned for non-captures, non-killer moves, non best moves
@@ -134,14 +133,32 @@ namespace Engine::Search
             else
             {
                 value = alpha + 1;
+            }*/
+
+            // PVS
+            if (movesSearched == 0)
+            {
+                sequence = search<nodeType>(board, -beta, -alpha, depth - 1, ply + 1, -color, settings, PVs, addedDepth);
+                value = -sequence.get_evaluation();
+            }
+            else
+            {
+                sequence = search<NodeType::NonPV>(board, -alpha - 1, -alpha, depth - 1, ply + 1, -color, settings, PVs, addedDepth);
+                value = -sequence.get_evaluation();
+
+                if (value > alpha && nodeType == NodeType::PV)
+                {
+                    sequence = search<NodeType::PV>(board, -beta, -alpha, depth - 1, ply + 1, -color, settings, PVs, addedDepth);
+                    value = -sequence.get_evaluation();
+                }
             }
 
-            // Main search
+            /*// Main search
             if (value > alpha)
             {
                 sequence = search(board, -beta, -alpha, depth - 1, ply + 1, -color, settings, PVs, isPV, true, addedDepth);
                 value = -sequence.get_evaluation();
-            }
+            }*/
 
             if (value > bestSequence.get_evaluation())
                 bestSequence = Sequence(value, move, std::move(sequence));
