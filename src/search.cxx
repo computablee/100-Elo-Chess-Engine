@@ -47,7 +47,7 @@ namespace Engine::Search
             for (auto depth = 1; depth < 256; depth++)
             {
                 Move PV[256];
-                auto score = search<NodeType::PV>(board, WORST_EVAL, BEST_EVAL, depth, 0, 0, PV);
+                auto score = search<NodeType::PV>(board, WORST_EVAL, BEST_EVAL, depth, 0, PV);
                 bestMove = PV[0];
 
                 UCI::announceInfo(PV, depth, maxPly, score, count, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count());
@@ -62,16 +62,13 @@ namespace Engine::Search
     }
 
     template <NodeType nodeType>
-    int32_t search(Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, uint8_t addedDepth, Move PV[256])
+    int32_t search(Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, Move PV[256])
     {
         maxPly = std::max(ply, maxPly);
 
         // Search extension
-        if (board.inCheck() && addedDepth < 3)
-        {
+        if (board.inCheck())
             depth++;
-            addedDepth++;
-        }
 
         // TT
         auto ttentry = table.get_entry(board);
@@ -108,7 +105,7 @@ namespace Engine::Search
         {
             Move PVdown[256];
             board.makeNullMove();
-            auto value = -search<NodeType::NonPV>(board, -beta, -beta + 1, depth - 3, ply + 1, addedDepth, PVdown);
+            auto value = -search<NodeType::NonPV>(board, -beta, -beta + 1, depth - 3, ply + 1, PVdown);
             board.unmakeNullMove();
 
             if (value >= beta)
@@ -141,7 +138,7 @@ namespace Engine::Search
             // PVS
             if (movesSearched == 0)
             {
-                value = -search<nodeType>(board, -beta, -alpha, depth - 1, ply + 1, addedDepth, PVdown);
+                value = -search<nodeType>(board, -beta, -alpha, depth - 1, ply + 1, PVdown);
             }
             else
             {
@@ -159,11 +156,11 @@ namespace Engine::Search
                     }
                 }
 
-                value = -search<NodeType::NonPV>(board, -alpha - 1, -alpha, std::max(depth - 1 - additionalDepthReduction, 0), ply + 1, addedDepth, PVdown);
+                value = -search<NodeType::NonPV>(board, -alpha - 1, -alpha, std::max(depth - 1 - additionalDepthReduction, 0), ply + 1, PVdown);
 
                 if (value > alpha && value < beta)
                 {
-                    value = -search<NodeType::PV>(board, -beta, -alpha, depth - 1, ply + 1, addedDepth, PVdown);
+                    value = -search<NodeType::PV>(board, -beta, -alpha, depth - 1, ply + 1, PVdown);
                 }
             }
 
