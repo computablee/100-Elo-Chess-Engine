@@ -86,7 +86,7 @@ namespace Engine::Search
         }
 
         // NMP
-        if (depth >= 3 &&
+        /*if (depth >= 3 &&
             !board.inCheck() &&
             !PV && canNMP)
         {
@@ -97,7 +97,7 @@ namespace Engine::Search
 
             if (value >= beta)
                 return value;
-        }
+        }*/
 
         // QS
         if (depth == 0)
@@ -124,7 +124,7 @@ namespace Engine::Search
             int32_t value;
 
             // LMR
-            if (movesSearched >= 4 &&
+            /*if (movesSearched >= 4 &&
                 depth >= 3 &&
                 move.score() == -9000) // score assigned for non-captures, non-killer moves, non best moves
             {
@@ -134,14 +134,14 @@ namespace Engine::Search
             else
             {
                 value = alpha + 1;
-            }
+            }*/
 
             // Main search
-            if (value > alpha)
-            {
-                sequence = search(board, -beta, -alpha, depth - 1, ply + 1, -color, settings, PVs, isPV, true, addedDepth);
-                value = -sequence.get_evaluation();
-            }
+            //if (value > alpha)
+            //{
+            sequence = search(board, -beta, -alpha, depth - 1, ply + 1, -color, settings, PVs, isPV, true, addedDepth);
+            value = -sequence.get_evaluation();
+            //}
 
             if (value > bestSequence.get_evaluation())
                 bestSequence = Sequence(value, move, std::move(sequence));
