@@ -35,15 +35,7 @@ namespace Engine::Helpers
                 move.setScore(-9000);
         }
 
-        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) {
-            const auto score_a = a.score();
-            const auto score_b = b.score();
-
-            if (score_a == score_b)
-                return a.from() > b.from();
-            else
-                return score_a > score_b;
-        });
+        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) { return a.score() > b.score(); });
     }
 
     void orderMoves(Movelist& moves, const Board& board, const Move killerMove[2])
@@ -60,15 +52,7 @@ namespace Engine::Helpers
                 move.setScore(-9000);
         }
 
-        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) {
-            const auto score_a = a.score();
-            const auto score_b = b.score();
-
-            if (score_a == score_b)
-                return a.from() > b.from();
-            else
-                return score_a > score_b;
-        });
+        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) { return a.score() > b.score(); });
     }
 
     void orderMoves(Movelist& moves, const Board& board, const Move killerMove[2], const Move& bestMove)
@@ -87,14 +71,6 @@ namespace Engine::Helpers
                 move.setScore(-9000);
         }
 
-        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) {
-            const auto score_a = a.score();
-            const auto score_b = b.score();
-
-            if (score_a == score_b)
-                return a.from() > b.from();
-            else
-                return score_a > score_b;
-        });
+        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) { return a.score() > b.score(); });
     }
 }

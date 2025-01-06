@@ -23,7 +23,7 @@ int main()
     while (true)
     {
         milliseconds_to_think = parseEach(board);
-        auto bestmove = iterativeDeepening(board, settings);
+        auto bestmove = iterativeDeepening(board);
         announceMove(bestmove);
         board.makeMove(bestmove);
     }

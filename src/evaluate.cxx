@@ -14,8 +14,10 @@ namespace Engine::Evaluate
 {
     PieceSquareTable pieceSquareTable;
 
-    int32_t heuristic(const Board& board, const int ply, GameOverResult gameover, const Settings& settings)
+    int32_t heuristic(const Board& board, const int ply, GameOverResult gameover)
     {
+        int8_t color = board.sideToMove() == Color::WHITE ? 1 : -1;
+
         if ((++count & 1023) == 0)
         {
             if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count() > milliseconds_to_think)
@@ -25,11 +27,11 @@ namespace Engine::Evaluate
         if (gameover == DRAW)
             return 0;
         else if (gameover == WHITEWON)
-           return settings.get_best_eval() - ply;
+           return (BEST_EVAL - ply) * color;
         else if (gameover == BLACKWON)
-            return settings.get_worst_eval() + ply;
+            return (WORST_EVAL + ply) * color;
 
-        return calculateMaterial(board);
+        return calculateMaterial(board) * color;
     }
 
     static const int gamePhase[] = { 0, 1, 1, 2, 4, 0 };
