@@ -25,28 +25,32 @@ We have compared to:
 - v13 (1977 Elo)
 - v14 (2068 Elo)
 
-Latest run was done against `v14` with a time control of `120+1` (in seconds) with `1000` total runs.
+Latest run was done against `v14` with a time control of `10+0.1` (in seconds) with `301` total runs.
 
 Results may be outdated.
 I run these occasionally; the engine may be stronger than the results shown.
 
 ```
-Score of 100 Elo Chess Engine vs Stash v14.0.1: 364 - 209 - 427  [0.578] 1000
-Elo difference: 54.3 +/- 16.3, LOS: 100.0 %, DrawRatio: 42.7 %
+Score of 100 Elo Chess Engine vs Stash v14.0.1: 125 - 60 - 116  [0.608] 301
+...      100 Elo Chess Engine playing White: 61 - 26 - 64  [0.616] 151
+...      100 Elo Chess Engine playing Black: 64 - 34 - 52  [0.600] 150
+...      White vs Black: 95 - 90 - 116  [0.508] 301
+Elo difference: 76.2 +/- 31.1, LOS: 100.0 %, DrawRatio: 38.5 %
 ```
 
-This results in an estimated Elo of: `2122`.
+This results in an estimated Elo of: `2144`.
 
 # Current Features
 
 The 100 Elo Chess Engine uses the following architecture:
 
 - Basic/buggy UCI support
-- PeSTO evaluation
+- PeSTO with incremental evaluation
 - Iterative deepening
 - Transposition table
 - Null move pruning
 - Move ordering (best move -> MVV-LVA -> killer moves -> quiet moves)
 - Quiescent search
+- Principal variation search
 - Late move reduction
 - Check extensions

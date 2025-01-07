@@ -1,10 +1,11 @@
 #include "uci.hxx"
+#include <chrono>
 
 using namespace chess;
 
 namespace Engine::UCI
 {
-    uint32_t parseGo(const Board& board, std::string input)
+    uint32_t parseGo(const Engine::Board& board, std::string input)
     {
         int wtime, btime, winc, binc;
         std::stringstream stream;
@@ -31,7 +32,7 @@ namespace Engine::UCI
             return std::max(btime / 20 + binc / 2 - 10, 0);
     }
 
-    void parsePosition(Board& board, const std::string& line)
+    void parsePosition(Engine::Board& board, const std::string& line)
     {
         std::stringstream stream;
         stream.str(line);
@@ -88,7 +89,7 @@ namespace Engine::UCI
         }
     }
 
-    uint32_t parseEach(Board& board)
+    uint32_t parseEach(Engine::Board& board)
     {
         std::string line;
         auto progress = false;
@@ -124,10 +125,16 @@ namespace Engine::UCI
         std::cout << "bestmove " << uci::moveToUci(move) << std::endl;
     }
 
-    void announceInfo(const std::vector<chess::Move>& pv, const int32_t depth, const int32_t score, const uint32_t nodes)
+    void announceInfo(chess::Move PV[256], const int32_t depth, const int32_t selDepth, const int32_t score, const uint32_t nodes, const uint32_t elapsedMilliseconds)
     {
-        std::cout << "info depth " << depth << " score cp " << score << " nodes " << nodes << " pv ";
-        for (const auto& move : pv) std::cout << uci::moveToUci(move) << " ";
+        std::cout << "info depth " << depth
+                << " seldepth " << selDepth
+                << " score cp " << score
+                << " nodes " << nodes
+                << " nps " << (uint64_t(nodes) * 1000ull / std::max(elapsedMilliseconds, 1u))
+                << " time " << elapsedMilliseconds
+                << " pv ";
+        for (int i = 0; i < depth && PV[i] != 0; i++) std::cout << uci::moveToUci(PV[i]) << " ";
         std::cout << std::endl;
     }
 }

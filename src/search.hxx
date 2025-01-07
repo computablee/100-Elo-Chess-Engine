@@ -7,6 +7,7 @@
 #include <chrono>
 #include "settings.hxx"
 #include "helpers.hxx"
+#include "board.hxx"
 
 using namespace Engine::Helpers;
 
@@ -17,42 +18,18 @@ namespace Engine::Search
 
     class TimeOut : std::exception { };
 
-    class Sequence
-    {
-    private:
-        int32_t evaluation;
-        std::list<chess::Move> sequence;
-
-    public:
-        inline Sequence(int32_t evaluation, std::list<chess::Move>&& sequence) : evaluation(evaluation), sequence(std::move(sequence)) { }
-
-        inline Sequence(int32_t evaluation) : evaluation(evaluation), sequence(std::list<chess::Move>()) { }
-
-        inline Sequence(int32_t evaluation, chess::Move move, Sequence&& sequence) : evaluation(evaluation), sequence(std::move(sequence).get_sequence()) { this->sequence.push_front(move); }
-
-        inline Sequence() : evaluation(INT_MIN), sequence(std::list<chess::Move>()) { }
-
-        inline Sequence(Sequence& sequence) = delete;
-
-        inline Sequence(Sequence&& sequence) : evaluation(sequence.get_evaluation()), sequence(std::move(sequence).get_sequence()) { }
-
-        inline int32_t get_evaluation() { return this->evaluation; }
-
-        inline std::list<chess::Move>&& get_sequence() && { return std::move(this->sequence); }
-
-        inline chess::Move get_first_move() { return this->sequence.front(); }
-
-        inline void operator=(Sequence& sequence) { this->evaluation = sequence.evaluation, this->sequence = std::move(sequence.sequence); }
-
-        inline void operator=(Sequence&& sequence) { this->evaluation = sequence.evaluation, this->sequence = std::move(sequence.sequence); }
-    };
+    enum class NodeType { NonPV, PV };
 
     inline std::chrono::steady_clock::time_point begin;
 
-    Sequence search(chess::Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, const int8_t color, const Settings& settings,
-        const std::vector<chess::Move>& PVs, const bool PV, const bool canNMP, uint8_t addedDepth);
+    template <NodeType nodeType>
+    int32_t search(Engine::Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, chess::Move PV[256]);
 
-    chess::Move iterativeDeepening(chess::Board& board, const Settings& settings);
+    void updatePV(chess::Move PV[256], const chess::Move& move);
 
-    int32_t quiescence(chess::Board& board, int32_t alpha, int32_t beta, const uint8_t ply, const int8_t color, const Settings& settings);
+    void updatePV(chess::Move PVup[256], const chess::Move PVdown[256], const chess::Move& move);
+
+    chess::Move iterativeDeepening(Engine::Board& board);
+
+    int32_t quiescence(Engine::Board& board, int32_t alpha, int32_t beta, const uint8_t ply);
 }

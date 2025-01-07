@@ -5,7 +5,7 @@ using namespace Engine::Helpers;
 
 namespace Engine::Helpers
 {
-    GameOverResult isGameOver(const Board& board, const Movelist& moves)
+    GameOverResult isGameOver(const Engine::Board& board, const Movelist& moves)
     {
         if (board.isInsufficientMaterial() || board.isRepetition())
         {
@@ -25,7 +25,7 @@ namespace Engine::Helpers
         return ONGOING;
     }
 
-    void orderMoves(Movelist& moves, const Board& board)
+    void orderMoves(Movelist& moves, const Engine::Board& board)
     {
         for (auto& move : moves)
         {
@@ -35,18 +35,10 @@ namespace Engine::Helpers
                 move.setScore(-9000);
         }
 
-        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) {
-            const auto score_a = a.score();
-            const auto score_b = b.score();
-
-            if (score_a == score_b)
-                return a.from() > b.from();
-            else
-                return score_a > score_b;
-        });
+        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) { return a.score() > b.score(); });
     }
 
-    void orderMoves(Movelist& moves, const Board& board, const Move killerMove[2])
+    void orderMoves(Movelist& moves, const Engine::Board& board, const Move killerMove[2])
     {
         for (auto& move : moves)
         {
@@ -60,18 +52,10 @@ namespace Engine::Helpers
                 move.setScore(-9000);
         }
 
-        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) {
-            const auto score_a = a.score();
-            const auto score_b = b.score();
-
-            if (score_a == score_b)
-                return a.from() > b.from();
-            else
-                return score_a > score_b;
-        });
+        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) { return a.score() > b.score(); });
     }
 
-    void orderMoves(Movelist& moves, const Board& board, const Move killerMove[2], const Move& bestMove)
+    void orderMoves(Movelist& moves, const Engine::Board& board, const Move killerMove[2], const Move& bestMove)
     {
         for (auto& move : moves)
         {
@@ -87,14 +71,6 @@ namespace Engine::Helpers
                 move.setScore(-9000);
         }
 
-        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) {
-            const auto score_a = a.score();
-            const auto score_b = b.score();
-
-            if (score_a == score_b)
-                return a.from() > b.from();
-            else
-                return score_a > score_b;
-        });
+        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) { return a.score() > b.score(); });
     }
 }

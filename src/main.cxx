@@ -4,6 +4,7 @@
 #include "settings.hxx"
 #include "uci.hxx"
 #include "search.hxx"
+#include "board.hxx"
 
 using namespace chess;
 using namespace Engine;
@@ -16,14 +17,14 @@ uint32_t milliseconds_to_think;
 
 int main()
 {
-    Board board;
+    Engine::Board board;
 
     parseStart(settings);
 
     while (true)
     {
         milliseconds_to_think = parseEach(board);
-        auto bestmove = iterativeDeepening(board, settings);
+        auto bestmove = iterativeDeepening(board);
         announceMove(bestmove);
         board.makeMove(bestmove);
     }

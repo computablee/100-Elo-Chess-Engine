@@ -2,6 +2,8 @@
 #include "tt.hxx"
 #include "evaluate.hxx"
 #include "uci.hxx"
+#include <cstring>
+#include <cmath>
 
 using namespace chess;
 using namespace Engine::TranspositionTable;
@@ -14,7 +16,19 @@ namespace Engine::Search
     Table table(1 << 28);
     Move killerMoves[256][2];
 
-    Move iterativeDeepening(Board& board, const Settings& settings)
+    void updatePV(Move PVup[256], const Move PVdown[256], const chess::Move& move)
+    {
+        PVup[0] = move;
+        std::memcpy(&PVup[1], PVdown, sizeof(Move) * 255);
+    }
+
+    void updatePV(Move PV[256], const chess::Move& move)
+    {
+        PV[0] = move;
+        PV[1] = 0;
+    }
+
+    Move iterativeDeepening(Engine::Board& board)
     {
         count = 0;
         maxPly = 0;
@@ -26,21 +40,17 @@ namespace Engine::Search
         movegen::legalmoves(moves, board);
 
         Move bestMove = moves[0];
-        std::vector<Move> bestSequence;
 
         try
         {
             // Iterative deepening
             for (auto depth = 1; depth < 256; depth++)
             {
-                auto bestMoveSequence = search(board, settings.get_worst_eval(), settings.get_best_eval(), depth, 0, board.sideToMove() == Color::WHITE ? 1 : -1,
-                    settings, bestSequence, true, true, 0);
-                auto score = bestMoveSequence.get_evaluation();
-                auto sequence = std::move(bestMoveSequence).get_sequence();
-                bestMove = sequence.front();
-                bestSequence = std::vector<Move> { sequence.begin(), sequence.end() };
+                Move PV[256];
+                auto score = search<NodeType::PV>(board, WORST_EVAL, BEST_EVAL, depth, 0, PV);
+                bestMove = PV[0];
 
-                UCI::announceInfo(bestSequence, depth, score, count);
+                UCI::announceInfo(PV, depth, maxPly, score, count, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count());
             }
         }
         catch (const TimeOut& e)
@@ -51,17 +61,14 @@ namespace Engine::Search
         return bestMove;
     }
 
-    Sequence search(Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, const int8_t color, const Settings& settings,
-            const std::vector<chess::Move>& PVs, const bool PV, const bool canNMP, uint8_t addedDepth)
+    template <NodeType nodeType>
+    int32_t search(Engine::Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, Move PV[256])
     {
         maxPly = std::max(ply, maxPly);
 
         // Search extension
-        if (board.inCheck() && addedDepth < 3)
-        {
+        if (board.inCheck())
             depth++;
-            addedDepth++;
-        }
 
         // TT
         auto ttentry = table.get_entry(board);
@@ -72,14 +79,20 @@ namespace Engine::Search
             if (ttentry.depth >= depth)
             {
                 if (ttentry.flag == EXACT)
-                    return Sequence(ttentry.value, std::list<Move> { ttentry.bestMove });
+                {
+                    updatePV(PV, ttentry.bestMove);
+                    return ttentry.value;
+                }
                 else if (ttentry.flag == LOWERBOUND)
                     alpha = std::max(alpha, ttentry.value);
                 else if (ttentry.flag == UPPERBOUND)
                     beta = std::min(beta, ttentry.value);
 
                 if (alpha >= beta)
-                    return Sequence(ttentry.value, std::list<Move> { ttentry.bestMove });
+                {
+                    updatePV(PV, ttentry.bestMove);
+                    return ttentry.value;
+                }
             }
 
             previousBestMove = ttentry.bestMove;
@@ -88,11 +101,11 @@ namespace Engine::Search
         // NMP
         if (depth >= 3 &&
             !board.inCheck() &&
-            !PV && canNMP)
+            nodeType == NodeType::NonPV)
         {
+            Move PVdown[256];
             board.makeNullMove();
-            auto sequence = search(board, -beta, -beta + 1, depth - 3, ply + 1, -color, settings, PVs, false, false, addedDepth);
-            auto value = -sequence.get_evaluation();
+            auto value = -search<NodeType::NonPV>(board, -beta, -beta + 1, depth - 3, ply + 1, PVdown);
             board.unmakeNullMove();
 
             if (value >= beta)
@@ -101,56 +114,71 @@ namespace Engine::Search
 
         // QS
         if (depth == 0)
-            return Sequence(quiescence(board, alpha, beta, ply + 1, color, settings));
+            return quiescence(board, alpha, beta, ply);
 
         Movelist moves;
         movegen::legalmoves(moves, board);
         
         if (auto gameover = isGameOver(board, moves))
-            return Sequence(heuristic(board, ply, gameover, settings) * color);
+            return heuristic(board, ply, gameover);
 
-        // MVV-LVA
+        // Move ordering
         orderMoves(moves, board, killerMoves[depth], previousBestMove);
 
-        Sequence bestSequence(settings.get_worst_eval());
+        int32_t bestEval = WORST_EVAL;
+        Move bestMove = 0;
         int movesSearched = 0;
 
         for (const auto& move : moves)
         {
-            const auto isPV = PV && ply < PVs.size() && PVs[ply] == move;
-
             board.makeMove(move);
-            Sequence sequence;
             int32_t value;
+            Move PVdown[256];
 
-            // LMR
-            if (movesSearched >= 4 &&
-                depth >= 3 &&
-                move.score() == -9000) // score assigned for non-captures, non-killer moves, non best moves
+            // PVS
+            if (movesSearched == 0)
             {
-                sequence = search(board, -alpha - 1, -alpha, depth - 2, ply + 1, -color, settings, PVs, isPV, true, addedDepth);
-                value = -sequence.get_evaluation();
+                value = -search<nodeType>(board, -beta, -alpha, depth - 1, ply + 1, PVdown);
             }
             else
             {
-                value = alpha + 1;
+                uint8_t additionalDepthReduction = 0;
+
+                // LMR
+                if (depth >= 3)
+                {
+                    if (movesSearched < 6)
+                        additionalDepthReduction = 1;
+                    else
+                    {
+                        additionalDepthReduction = depth / 3;
+                        if (nodeType == NodeType::PV || move.score() > -9000 || board.inCheck())
+                            additionalDepthReduction = std::max(additionalDepthReduction * 2 / 3, 1);
+                    }
+                }
+
+                value = -search<NodeType::NonPV>(board, -alpha - 1, -alpha, std::max(depth - 1 - additionalDepthReduction, 0), ply + 1, PVdown);
+
+                if (value > alpha && value < beta)
+                {
+                    value = -search<NodeType::PV>(board, -beta, -alpha, depth - 1, ply + 1, PVdown);
+                }
             }
 
-            // Main search
-            if (value > alpha)
+            if (value > bestEval)
             {
-                sequence = search(board, -beta, -alpha, depth - 1, ply + 1, -color, settings, PVs, isPV, true, addedDepth);
-                value = -sequence.get_evaluation();
+                bestEval = value;
+                bestMove = move;
+                updatePV(PV, PVdown, move);
             }
-
-            if (value > bestSequence.get_evaluation())
-                bestSequence = Sequence(value, move, std::move(sequence));
 
             board.unmakeMove(move);
 
             // Alpha-beta pruning
             if (value > alpha)
+            {
                 alpha = value;
+            }
 
             if (alpha >= beta)
             {
@@ -169,7 +197,7 @@ namespace Engine::Search
         // TT
         if (ttentry.hash != board.hash() || depth > ttentry.depth)
         {
-            ttentry.value = bestSequence.get_evaluation();
+            ttentry.value = bestEval;
 
             if (ttentry.value <= alphaOrig)
                 ttentry.flag = UPPERBOUND;
@@ -180,21 +208,21 @@ namespace Engine::Search
 
             ttentry.depth = depth;
             ttentry.hash = board.hash();
-            ttentry.bestMove = bestSequence.get_first_move();
+            ttentry.bestMove = bestMove;
             table.set_entry(board, ttentry);
         }
 
-        return bestSequence;
+        return bestEval;
     }
 
-    int32_t quiescence(Board& board, int32_t alpha, int32_t beta, const uint8_t ply, const int8_t color, const Settings& settings)
+    int32_t quiescence(Engine::Board& board, int32_t alpha, int32_t beta, const uint8_t ply)
     {
         maxPly = std::max(ply, maxPly);
 
         Movelist moves;
         movegen::legalmoves(moves, board);
 
-        int value = heuristic(board, ply + 1, isGameOver(board, moves), settings) * color;
+        int value = heuristic(board, ply + 1, isGameOver(board, moves));
 
         if (value >= beta)
             return beta;
@@ -209,7 +237,7 @@ namespace Engine::Search
                 break;
 
             board.makeMove(move);
-            value = -quiescence(board, -beta, -alpha, ply + 1, -color, settings);
+            value = -quiescence(board, -beta, -alpha, ply + 1);
             board.unmakeMove(move);
 
             if (value >= beta)
