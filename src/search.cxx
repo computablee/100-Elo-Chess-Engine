@@ -28,7 +28,7 @@ namespace Engine::Search
         PV[1] = 0;
     }
 
-    Move iterativeDeepening(Board& board)
+    Move iterativeDeepening(Engine::Board& board)
     {
         count = 0;
         maxPly = 0;
@@ -62,7 +62,7 @@ namespace Engine::Search
     }
 
     template <NodeType nodeType>
-    int32_t search(Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, Move PV[256])
+    int32_t search(Engine::Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, Move PV[256])
     {
         maxPly = std::max(ply, maxPly);
 
@@ -215,7 +215,7 @@ namespace Engine::Search
         return bestEval;
     }
 
-    int32_t quiescence(Board& board, int32_t alpha, int32_t beta, const uint8_t ply)
+    int32_t quiescence(Engine::Board& board, int32_t alpha, int32_t beta, const uint8_t ply)
     {
         maxPly = std::max(ply, maxPly);
 

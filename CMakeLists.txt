@@ -12,7 +12,8 @@ add_executable(${PROJECT_NAME}
     src/tt.cxx
     src/uci.cxx
     src/search.cxx
-    src/evaluate.cxx)
+    src/evaluate.cxx
+    src/board.cxx)
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -O3 -march=native -g)
 

@@ -7,6 +7,7 @@
 #include <chrono>
 #include "settings.hxx"
 #include "helpers.hxx"
+#include "board.hxx"
 
 using namespace Engine::Helpers;
 
@@ -22,13 +23,13 @@ namespace Engine::Search
     inline std::chrono::steady_clock::time_point begin;
 
     template <NodeType nodeType>
-    int32_t search(chess::Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, chess::Move PV[256]);
+    int32_t search(Engine::Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, chess::Move PV[256]);
 
     void updatePV(chess::Move PV[256], const chess::Move& move);
 
     void updatePV(chess::Move PVup[256], const chess::Move PVdown[256], const chess::Move& move);
 
-    chess::Move iterativeDeepening(chess::Board& board);
+    chess::Move iterativeDeepening(Engine::Board& board);
 
-    int32_t quiescence(chess::Board& board, int32_t alpha, int32_t beta, const uint8_t ply);
+    int32_t quiescence(Engine::Board& board, int32_t alpha, int32_t beta, const uint8_t ply);
 }

@@ -4,6 +4,7 @@
 #include "settings.hxx"
 #include "uci.hxx"
 #include "search.hxx"
+#include "board.hxx"
 
 using namespace chess;
 using namespace Engine;
@@ -16,7 +17,7 @@ uint32_t milliseconds_to_think;
 
 int main()
 {
-    Board board;
+    Engine::Board board;
 
     parseStart(settings);
 

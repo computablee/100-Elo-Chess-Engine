@@ -5,7 +5,7 @@ using namespace chess;
 
 namespace Engine::UCI
 {
-    uint32_t parseGo(const Board& board, std::string input)
+    uint32_t parseGo(const Engine::Board& board, std::string input)
     {
         int wtime, btime, winc, binc;
         std::stringstream stream;
@@ -32,7 +32,7 @@ namespace Engine::UCI
             return std::max(btime / 20 + binc / 2 - 10, 0);
     }
 
-    void parsePosition(Board& board, const std::string& line)
+    void parsePosition(Engine::Board& board, const std::string& line)
     {
         std::stringstream stream;
         stream.str(line);
@@ -89,7 +89,7 @@ namespace Engine::UCI
         }
     }
 
-    uint32_t parseEach(Board& board)
+    uint32_t parseEach(Engine::Board& board)
     {
         std::string line;
         auto progress = false;
