@@ -18,20 +18,20 @@ namespace Engine::TranspositionTable
     class Table
     {
     private:
+        const uint64_t elements;
         ttEntry* transpositionTable;
-        uint32_t elements;
 
     public:
-        Table(uint32_t bytes);
+        Table(uint64_t bytes);
 
-        inline ttEntry get_entry(chess::Board& board)
+        constexpr inline __attribute__((always_inline)) ttEntry& get_entry(const uint64_t hash) const
         {
-            return this->transpositionTable[Engine::Helpers::reduce(board.hash(), this->elements)];
+            return this->transpositionTable[Engine::Helpers::reduce(hash, this->elements)];
         }
 
-        inline void set_entry(chess::Board& board, ttEntry& entry)
+        constexpr inline __attribute__((always_inline)) void set_entry(const uint64_t hash, ttEntry& entry)
         {
-            this->transpositionTable[Engine::Helpers::reduce(board.hash(), this->elements)] = entry;
+            this->transpositionTable[Engine::Helpers::reduce(hash, this->elements)] = entry;
         }
     };
 }

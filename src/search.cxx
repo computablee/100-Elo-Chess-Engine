@@ -65,16 +65,17 @@ namespace Engine::Search
     int32_t search(Engine::Board& board, int32_t alpha, int32_t beta, uint8_t depth, const uint8_t ply, Move PV[256])
     {
         maxPly = std::max(ply, maxPly);
+        const auto hash = board.hash();
 
         // Search extension
         if (board.inCheck())
             depth++;
 
         // TT
-        auto ttentry = table.get_entry(board);
+        auto ttentry = table.get_entry(hash);
         auto alphaOrig = alpha;
         Move previousBestMove = 0;
-        if (ttentry.hash == board.hash())
+        if (ttentry.hash == hash)
         {
             if (ttentry.depth >= depth)
             {
@@ -195,7 +196,7 @@ namespace Engine::Search
         }
 
         // TT
-        if (ttentry.hash != board.hash() || depth > ttentry.depth)
+        if (ttentry.hash != hash || depth > ttentry.depth)
         {
             ttentry.value = bestEval;
 
@@ -207,9 +208,9 @@ namespace Engine::Search
                 ttentry.flag = EXACT;
 
             ttentry.depth = depth;
-            ttentry.hash = board.hash();
+            ttentry.hash = hash;
             ttentry.bestMove = bestMove;
-            table.set_entry(board, ttentry);
+            table.set_entry(hash, ttentry);
         }
 
         return bestEval;
@@ -231,9 +232,11 @@ namespace Engine::Search
 
         orderMoves(moves, board);
 
+        const auto inCheck = board.inCheck();
+
         for (const auto& move : moves)
         {
-            if (!board.isCapture(move) && !board.inCheck())
+            if (!inCheck && !board.isCapture(move)) // we'll investigate a non-capture move if we're in check
                 break;
 
             board.makeMove(move);

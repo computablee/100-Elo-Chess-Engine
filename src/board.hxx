@@ -1,6 +1,4 @@
-#ifndef BOARD
-#define BOARD
-
+#pragma once
 #include <chess.hpp>
 #include <cstdint>
 
@@ -52,5 +50,3 @@ namespace Engine
         uint64_t hash() const;
     };
 }
-
-#endif
