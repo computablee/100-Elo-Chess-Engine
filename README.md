@@ -24,21 +24,22 @@ We have compared to:
 - v12 (1891 Elo)
 - v13 (1977 Elo)
 - v14 (2068 Elo)
+- v15 (**estimated** 2150 Elo)
 
-Latest run was done against `v14` with a time control of `10+0.1` (in seconds) with `301` total runs.
+Latest run was done against `v15` with a time control of `120+1` (in seconds) with `1000` total runs.
 
 Results may be outdated.
 I run these occasionally; the engine may be stronger than the results shown.
 
 ```
-Score of 100 Elo Chess Engine vs Stash v14.0.1: 125 - 60 - 116  [0.608] 301
-...      100 Elo Chess Engine playing White: 61 - 26 - 64  [0.616] 151
-...      100 Elo Chess Engine playing Black: 64 - 34 - 52  [0.600] 150
-...      White vs Black: 95 - 90 - 116  [0.508] 301
-Elo difference: 76.2 +/- 31.1, LOS: 100.0 %, DrawRatio: 38.5 %
+Score of 100 Elo Chess Engine vs Stash v15.0: 287 - 335 - 378  [0.476] 1000
+...      100 Elo Chess Engine playing White: 147 - 147 - 206  [0.500] 500
+...      100 Elo Chess Engine playing Black: 140 - 188 - 172  [0.452] 500
+...      White vs Black: 335 - 287 - 378  [0.524] 1000
+Elo difference: -16.7 +/- 17.0, LOS: 2.7 %, DrawRatio: 37.8 %
 ```
 
-This results in an estimated Elo of: `2144`.
+This results in an estimated Elo of: `2133`.
 
 # Current Features
 
