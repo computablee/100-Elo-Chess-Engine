@@ -18,5 +18,5 @@ namespace Engine::Helpers
 
     constexpr inline int32_t flip(const int32_t x) { return (x ^ 56) & 0xFF; }
 
-    constexpr inline __attribute__((always_inline)) uint32_t reduce(const uint64_t x, const uint64_t N) { return ((unsigned __int128)x * (unsigned __int128)N) >> 64; }
+    constexpr inline __attribute__((always_inline)) uint32_t reduce(const uint32_t x, const uint32_t N) { return ((uint64_t)x * (uint64_t)N) >> 32; }
 }

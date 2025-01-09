@@ -75,7 +75,7 @@ namespace Engine::Search
         auto ttentry = table.get_entry(hash);
         auto alphaOrig = alpha;
         Move previousBestMove = 0;
-        if (ttentry.hash == hash)
+        if (ttentry.hash == (uint16_t)hash)
         {
             if (ttentry.depth >= depth)
             {
@@ -196,7 +196,7 @@ namespace Engine::Search
         }
 
         // TT
-        if (ttentry.hash != hash || depth > ttentry.depth)
+        if (ttentry.hash != (uint16_t)hash || depth > ttentry.depth)
         {
             ttentry.value = bestEval;
 
@@ -208,8 +208,8 @@ namespace Engine::Search
                 ttentry.flag = EXACT;
 
             ttentry.depth = depth;
-            ttentry.hash = hash;
-            ttentry.bestMove = bestMove;
+            ttentry.hash = (uint16_t)hash;
+            ttentry.bestMove = bestMove.move();
             table.set_entry(hash, ttentry);
         }
 

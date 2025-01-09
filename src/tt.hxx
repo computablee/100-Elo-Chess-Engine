@@ -8,11 +8,11 @@ namespace Engine::TranspositionTable
 
     struct ttEntry
     {
-        uint64_t hash;
+        uint16_t hash;
         int value;
         ttFlag flag;
         uint8_t depth;
-        chess::Move bestMove;
+        uint16_t bestMove;
     };
 
     class Table
@@ -26,12 +26,12 @@ namespace Engine::TranspositionTable
 
         constexpr inline __attribute__((always_inline)) ttEntry& get_entry(const uint64_t hash) const
         {
-            return this->transpositionTable[Engine::Helpers::reduce(hash, this->elements)];
+            return this->transpositionTable[Engine::Helpers::reduce(hash >> 32, this->elements)];
         }
 
         constexpr inline __attribute__((always_inline)) void set_entry(const uint64_t hash, ttEntry& entry)
         {
-            this->transpositionTable[Engine::Helpers::reduce(hash, this->elements)] = entry;
+            this->transpositionTable[Engine::Helpers::reduce(hash >> 32, this->elements)] = entry;
         }
     };
 }

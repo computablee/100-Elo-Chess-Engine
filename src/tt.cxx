@@ -6,4 +6,6 @@ using namespace chess;
 Table::Table(uint64_t bytes) :
     elements(bytes / sizeof(ttEntry)),
     transpositionTable(new ttEntry[this->elements])
-{ }
+{
+    std::cout << this->elements << std::endl;
+}
