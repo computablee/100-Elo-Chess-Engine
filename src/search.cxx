@@ -98,6 +98,11 @@ namespace Engine::Search
 
             previousBestMove = ttentry.bestMove;
         }
+        // Internal iterative reductions
+        else if (depth > 3)
+        {
+            depth--;
+        }
 
         // NMP
         if (depth >= 3 &&
@@ -148,6 +153,7 @@ namespace Engine::Search
                 // LMR
                 if (depth >= 3)
                 {
+                    // This heuristic uses the Senpai reduction, slightly modified
                     if (movesSearched < 6)
                         additionalDepthReduction = 1;
                     else

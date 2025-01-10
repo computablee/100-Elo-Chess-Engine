@@ -55,3 +55,4 @@ The 100 Elo Chess Engine uses the following architecture:
 - Principal variation search
 - Late move reduction
 - Check extensions
+- Internal iterative reductions
