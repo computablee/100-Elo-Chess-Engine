@@ -7,25 +7,26 @@ namespace Engine::UCI
 {
     uint32_t parseGo(const Engine::Board& board, std::string input)
     {
-        int wtime, btime, winc, binc;
+        int wtime = 0, btime = 0, winc = 0, binc = 0;
         std::stringstream stream;
         stream.str(input);
         std::string part;
         stream >> part;
         assert(part == "go");
-        stream >> part;
-        assert(part == "wtime");
-        stream >> wtime;
-        stream >> part;
-        assert(part == "btime");
-        stream >> btime;
-        stream >> part;
-        assert(part == "winc");
-        stream >> winc;
-        stream >> part;
-        assert(part == "binc");
-        stream >> binc;
-
+        while (!stream.eof())
+        {
+            stream >> part;
+            if (part == "wtime")
+                stream >> wtime;
+            else if (part == "btime")
+                stream >> btime;
+            else if (part == "winc")
+                stream >> winc;
+            else if (part == "binc")
+                stream >> binc;
+            else
+                assert(false);
+        }
         if (board.sideToMove() == Color::WHITE)
             return std::max(wtime / 20 + winc / 2 - 10, 0);
         else
@@ -66,29 +67,6 @@ namespace Engine::UCI
         }
     }
 
-    void parseStart(Engine::Settings& settings)
-    {
-        std::string line;
-        auto progress = false;
-
-        while (!progress)
-        {
-            std::getline(std::cin, line);
-
-            if (line == "uci")
-            {
-                std::cout << "id name " << settings.get_engine_name() << std::endl;
-                std::cout << "id author " << settings.get_engine_author() << std::endl;
-                std::cout << "uciok" << std::endl;
-            }
-            else if (line == "isready")
-            {
-                std::cout << "readyok" << std::endl;
-                progress = true;
-            }
-        }
-    }
-
     uint32_t parseEach(Engine::Board& board)
     {
         std::string line;
@@ -114,6 +92,21 @@ namespace Engine::UCI
             else if (line == "quit")
             {
                 exit(0);
+            }
+            else if (line == "uci")
+            {
+                std::cout << "id name " << Engine::settings.get_engine_name() << std::endl;
+                std::cout << "id author " << Engine::settings.get_engine_author() << std::endl;
+                std::cout << "uciok" << std::endl;
+            }
+            else if (line == "isready")
+            {
+                std::cout << "readyok" << std::endl;
+                progress = true;
+            }
+            else if (line == "ucinewgame")
+            {
+                board = Engine::Board();
             }
         }
 

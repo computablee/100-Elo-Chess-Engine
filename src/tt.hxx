@@ -2,6 +2,9 @@
 #include <chess.hpp>
 #include "helpers.hxx"
 
+#define KB(X) (1024 * (X))
+#define MB(X) (1024 * KB(X))
+
 namespace Engine::TranspositionTable
 {
     enum ttFlag : uint8_t { EXACT, UPPERBOUND, LOWERBOUND };

@@ -19,4 +19,6 @@ namespace Engine
         inline std::string get_engine_name() const { return this->engine_name; }
         inline std::string get_engine_author() const { return this->engine_author; }
     };
+
+    inline Settings settings;
 }

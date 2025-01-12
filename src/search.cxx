@@ -14,7 +14,7 @@ extern uint32_t milliseconds_to_think;
 
 namespace Engine::Search
 {   
-    Table table(1 << 28);
+    Table table(MB(256));
     Move killerMoves[256][2];
     int16_t historyMoves[1 << (sizeof(Engine::Helpers::MoveType) * CHAR_BIT)];
 
