@@ -8,11 +8,11 @@ namespace Engine::UCI
 {
     void parsePosition(Engine::Board& board, const std::string& line);
 
-    uint32_t parseGo(const Engine::Board& board, std::string input);
-
-    void parseStart(Engine::Settings& settings);
+    uint32_t parseGo(const Engine::Board& board, const std::string& line);
     
     uint32_t parseEach(Engine::Board& board);
+
+    void parseOption(const std::string& line);
 
     void announceMove(chess::Move& move);
 

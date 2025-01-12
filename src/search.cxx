@@ -7,14 +7,14 @@
 #include <cmath>
 
 using namespace chess;
-using namespace Engine::TranspositionTable;
 using namespace Engine::Evaluate;
+using namespace Engine::TranspositionTable;
 
 extern uint32_t milliseconds_to_think;
 
 namespace Engine::Search
-{   
-    Table table(MB(256));
+{
+    TranspositionTable::Table table;
     Move killerMoves[256][2];
     int16_t historyMoves[1 << (sizeof(Engine::Helpers::MoveType) * CHAR_BIT)];
 

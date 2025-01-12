@@ -1,9 +1,23 @@
 #include "tt.hxx"
 
-using namespace Engine::TranspositionTable;
 using namespace chess;
 
-Table::Table(uint64_t bytes) :
-    elements(bytes / sizeof(ttEntry)),
-    transpositionTable(new ttEntry[this->elements])
-{ }
+namespace Engine::TranspositionTable
+{
+    Table::Table() :
+        elements(MB(1)),
+        transpositionTable(new ttEntry[this->elements])
+    { }
+
+    void Table::set_size(const uint64_t bytes)
+    {
+        delete[] this->transpositionTable;
+        this->elements = bytes / sizeof(ttEntry);
+        this->transpositionTable = new ttEntry[this->elements];
+    }
+
+    Table::~Table()
+    {
+        delete[] this->transpositionTable;
+    }
+}

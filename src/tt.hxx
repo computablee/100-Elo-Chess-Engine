@@ -21,11 +21,15 @@ namespace Engine::TranspositionTable
     class Table
     {
     private:
-        const uint64_t elements;
+        uint64_t elements;
         ttEntry* transpositionTable;
 
     public:
-        Table(uint64_t bytes);
+        Table();
+
+        ~Table();
+
+        void set_size(const uint64_t bytes);
 
         constexpr inline __attribute__((always_inline)) ttEntry& get_entry(const uint64_t hash) const
         {

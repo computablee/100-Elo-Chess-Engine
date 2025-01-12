@@ -1,15 +1,21 @@
 #include "uci.hxx"
+#include "tt.hxx"
 #include <chrono>
 
 using namespace chess;
 
+namespace Engine::Search
+{
+    extern TranspositionTable::Table table;
+}
+
 namespace Engine::UCI
 {
-    uint32_t parseGo(const Engine::Board& board, std::string input)
+    uint32_t parseGo(const Engine::Board& board, const std::string& line)
     {
         int wtime = 0, btime = 0, winc = 0, binc = 0;
         std::stringstream stream;
-        stream.str(input);
+        stream.str(line);
         std::string part;
         stream >> part;
         assert(part == "go");
@@ -31,6 +37,27 @@ namespace Engine::UCI
             return std::max(wtime / 20 + winc / 2 - 10, 0);
         else
             return std::max(btime / 20 + binc / 2 - 10, 0);
+    }
+
+    void parseOption(const std::string& line)
+    {
+        std::stringstream stream;
+        stream.str(line);
+        std::string part;
+        std::string start;
+        stream >> part;
+        assert(part == "name");
+        stream >> part;
+        if (part == "Hash")
+        {
+            uint64_t size = 1;
+            stream >> part;
+            assert(part == "value");
+            stream >> size;
+            Engine::Search::table.set_size(MB(size));
+        }
+        else
+            assert(false);
     }
 
     void parsePosition(Engine::Board& board, const std::string& line)
@@ -97,6 +124,7 @@ namespace Engine::UCI
             {
                 std::cout << "id name " << Engine::settings.get_engine_name() << std::endl;
                 std::cout << "id author " << Engine::settings.get_engine_author() << std::endl;
+                std::cout << "option name Hash type spin default 1 min 1 max 256" << std::endl;
                 std::cout << "uciok" << std::endl;
             }
             else if (line == "isready")
@@ -107,6 +135,10 @@ namespace Engine::UCI
             else if (line == "ucinewgame")
             {
                 board = Engine::Board();
+            }
+            else if (line == "setoption")
+            {
+                parseOption(line);
             }
         }
 
