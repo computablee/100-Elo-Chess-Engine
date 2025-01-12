@@ -38,24 +38,7 @@ namespace Engine::Helpers
         std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) { return a.score() > b.score(); });
     }
 
-    void orderMoves(Movelist& moves, const Engine::Board& board, const Move killerMove[2])
-    {
-        for (auto& move : moves)
-        {
-            if (board.isCapture(move))
-                move.setScore((board.at(move.to()).type() * 1000 - board.at(move.from()).type() * 100));
-            else if (move == killerMove[0])
-                move.setScore(-7000);
-            else if (move == killerMove[1])
-                move.setScore(-8000);
-            else
-                move.setScore(-9000);
-        }
-
-        std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) { return a.score() > b.score(); });
-    }
-
-    void orderMoves(Movelist& moves, const Engine::Board& board, const Move killerMove[2], const Move& bestMove)
+    void orderMoves(Movelist& moves, const Engine::Board& board, const Move killerMove[2], const int16_t* historyMoves, const Move& bestMove)
     {
         for (auto& move : moves)
         {
@@ -68,7 +51,7 @@ namespace Engine::Helpers
             else if (move == killerMove[1])
                 move.setScore(-8000);
             else
-                move.setScore(-9000);
+                move.setScore(-9000 + historyMoves[move.move()] / 16 - 2048);
         }
 
         std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) { return a.score() > b.score(); });

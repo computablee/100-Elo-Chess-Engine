@@ -2,6 +2,7 @@
 #include "tt.hxx"
 #include "evaluate.hxx"
 #include "uci.hxx"
+#include "helpers.hxx"
 #include <cstring>
 #include <cmath>
 
@@ -15,6 +16,7 @@ namespace Engine::Search
 {   
     Table table(1 << 28);
     Move killerMoves[256][2];
+    int16_t historyMoves[1 << (sizeof(Engine::Helpers::MoveType) * CHAR_BIT)];
 
     void updatePV(Move PVup[256], const Move PVdown[256], const chess::Move& move)
     {
@@ -40,6 +42,8 @@ namespace Engine::Search
         movegen::legalmoves(moves, board);
 
         Move bestMove = moves[0];
+
+        for (auto& move : historyMoves) move /= 8;
 
         try
         {
@@ -129,7 +133,7 @@ namespace Engine::Search
             return heuristic(board, ply, gameover);
 
         // Move ordering
-        orderMoves(moves, board, killerMoves[depth], previousBestMove);
+        orderMoves(moves, board, killerMoves[depth], historyMoves, previousBestMove);
 
         int32_t bestEval = WORST_EVAL;
         Move bestMove = 0;
@@ -189,11 +193,14 @@ namespace Engine::Search
 
             if (alpha >= beta)
             {
-                // Killer moves
                 if (!board.isCapture(move))
                 {
+                    // Killer moves
                     killerMoves[depth][1] = killerMoves[depth][0];
                     killerMoves[depth][0] = move;
+
+                    // History heuristic
+                    history_update(move.move(), historyMoves, depth * depth);
                 }
                 break;
             }
