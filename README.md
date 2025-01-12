@@ -50,7 +50,7 @@ The 100 Elo Chess Engine uses the following architecture:
 - Iterative deepening
 - Transposition table
 - Null move pruning
-- Move ordering (best move -> MVV-LVA -> killer moves -> quiet moves)
+- Move ordering (best move -> MVV-LVA -> killer moves -> history heuristic)
 - Quiescent search
 - Principal variation search
 - Late move reduction
