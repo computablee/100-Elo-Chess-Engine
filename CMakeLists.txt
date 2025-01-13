@@ -1,10 +1,18 @@
 cmake_minimum_required(VERSION 3.10)
-project(100Elo LANGUAGES CXX)
+project(100-elo LANGUAGES CXX)
+
+if(WINDOWS STREQUAL "true")
+    set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
+    set(TARGET_OS "windows")
+else()
+    set(CMAKE_CXX_COMPILER g++)
+    set(TARGET_OS "linux")
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(${PROJECT_NAME}
+set(COMMON_SOURCES
     src/main.cxx
     src/helpers.cxx
     src/pst.cxx
@@ -15,6 +23,26 @@ add_executable(${PROJECT_NAME}
     src/evaluate.cxx
     src/board.cxx)
 
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -O3 -march=native -g)
+add_executable(${PROJECT_NAME}-${TARGET_OS}-x86_64-modern ${COMMON_SOURCES})
+add_executable(${PROJECT_NAME}-${TARGET_OS}-x86_64        ${COMMON_SOURCES})
+add_executable(${PROJECT_NAME}-${TARGET_OS}-x86_64-v2     ${COMMON_SOURCES})
+add_executable(${PROJECT_NAME}-${TARGET_OS}-x86_64-v3     ${COMMON_SOURCES})
+add_executable(${PROJECT_NAME}-${TARGET_OS}-x86_64-v4     ${COMMON_SOURCES})
 
-target_include_directories(${PROJECT_NAME} PRIVATE src/${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/chess-library/include)
+target_include_directories(${PROJECT_NAME}-${TARGET_OS}-x86_64-modern PRIVATE src/${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/chess-library/include)
+target_include_directories(${PROJECT_NAME}-${TARGET_OS}-x86_64        PRIVATE src/${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/chess-library/include)
+target_include_directories(${PROJECT_NAME}-${TARGET_OS}-x86_64-v2     PRIVATE src/${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/chess-library/include)
+target_include_directories(${PROJECT_NAME}-${TARGET_OS}-x86_64-v3     PRIVATE src/${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/chess-library/include)
+target_include_directories(${PROJECT_NAME}-${TARGET_OS}-x86_64-v4     PRIVATE src/${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/chess-library/include)
+
+target_compile_options(${PROJECT_NAME}-${TARGET_OS}-x86_64-modern PRIVATE -Wall -Wextra -O3 -march=native -g -flto -DNDEBUG)
+target_compile_options(${PROJECT_NAME}-${TARGET_OS}-x86_64        PRIVATE -Wall -Wextra -O3 -march=x86-64 -g -flto -DNDEBUG)
+target_compile_options(${PROJECT_NAME}-${TARGET_OS}-x86_64-v2     PRIVATE -Wall -Wextra -O3 -march=x86-64-v2 -g -flto -DNDEBUG)
+target_compile_options(${PROJECT_NAME}-${TARGET_OS}-x86_64-v3     PRIVATE -Wall -Wextra -O3 -march=x86-64-v3 -g -flto -DNDEBUG)
+target_compile_options(${PROJECT_NAME}-${TARGET_OS}-x86_64-v4     PRIVATE -Wall -Wextra -O3 -march=x86-64-v4 -g -flto -DNDEBUG)
+
+target_link_options(${PROJECT_NAME}-${TARGET_OS}-x86_64-modern PRIVATE -static)
+target_link_options(${PROJECT_NAME}-${TARGET_OS}-x86_64        PRIVATE -static)
+target_link_options(${PROJECT_NAME}-${TARGET_OS}-x86_64-v2     PRIVATE -static)
+target_link_options(${PROJECT_NAME}-${TARGET_OS}-x86_64-v3     PRIVATE -static)
+target_link_options(${PROJECT_NAME}-${TARGET_OS}-x86_64-v4     PRIVATE -static)

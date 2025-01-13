@@ -5,7 +5,7 @@ build/*
 stash-*
 
 # Executables
-100Elo*
+100-elo*
 
 # Prerequisites
 *.d
