@@ -1,5 +1,10 @@
 # Build
 
+The CMake build scripts are only tested on Linux using the GNU C++ compiler (for native compilation) and the MinGW C++ compiler (for cross-compilation to Windows).
+MacOS (with Apple Silicon) seems to work in my limited testing, since `g++` on MacOS is just a link to the LLVM C++ compiler.
+
+To be honest, I have never used CMake on Windows, so I don't even know how to start with that.
+
 ```sh
 # Clone repo and submodules
 git clone https://github.com/computablee/100-Elo-Chess-Engine.git
@@ -10,11 +15,14 @@ git submodule update
 # Build
 mkdir build
 cd build
-cmake ..
-make -j8
+cmake .. # -DWINDOWS=true to cross-compile to Windows
+make     # -jN for multi-core compilation
 ```
 
 # Current Elo Estimates
+
+**Update**: The 100 Elo Chess Engine has been released to CCRL for evaluation.
+This README will be updated with a rating as soon as I'm aware of it.
 
 Currently, the 100 Elo Chess Engine is using the [Stash engine](https://gitlab.com/mhouppin/stash-bot) and [cutechess](https://cutechess.com/) to get a rough idea of Elo.
 We have compared to:
