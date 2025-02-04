@@ -27,7 +27,7 @@ namespace Engine::Search
     void updatePV(Move PV[256], const chess::Move& move)
     {
         PV[0] = move;
-        PV[1] = 0;
+        std::memset(&PV[1], 0, sizeof(Move) * 255);
     }
 
     Move iterativeDeepening(Engine::Board& board)
@@ -143,7 +143,7 @@ namespace Engine::Search
         {
             board.makeMove(move);
             int32_t value;
-            Move PVdown[256];
+            Move PVdown[256] = { 0 };
 
             // PVS
             if (movesSearched == 0)
