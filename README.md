@@ -64,3 +64,4 @@ The 100 Elo Chess Engine uses the following architecture:
 - Late move reduction
 - Check extensions
 - Internal iterative reductions
+- Reverse futility pruning

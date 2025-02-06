@@ -43,8 +43,6 @@ namespace Engine::Search
 
         Move bestMove = moves[0];
 
-        for (auto& move : historyMoves) move /= 8;
-
         try
         {
             // Iterative deepening
@@ -53,6 +51,8 @@ namespace Engine::Search
                 Move PV[256];
                 auto score = search<NodeType::PV>(board, WORST_EVAL, BEST_EVAL, depth, 0, PV);
                 bestMove = PV[0];
+
+                for (auto& move : historyMoves) move /= 8;
 
                 UCI::announceInfo(PV, depth, maxPly, score, count, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count());
             }
@@ -128,9 +128,20 @@ namespace Engine::Search
 
         Movelist moves;
         movegen::legalmoves(moves, board);
-        
-        if (auto gameover = isGameOver(board, moves))
-            return heuristic(board, ply, gameover);
+
+        auto gameover = isGameOver(board, moves);
+        auto eval = heuristic(board, ply, gameover);
+
+        if (gameover)
+            return eval;
+
+        // Reverse futility pruning
+        auto margin = 150;
+        if (nodeType == NodeType::NonPV &&
+            depth == 1 &&
+            eval >= beta + margin &&
+            !board.inCheck())
+            return eval;
 
         // Move ordering
         orderMoves(moves, board, killerMoves[depth], historyMoves, previousBestMove);
